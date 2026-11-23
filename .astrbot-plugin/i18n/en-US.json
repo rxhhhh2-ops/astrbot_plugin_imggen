@@ -1,0 +1,8 @@
+{
+  "views": {
+    "studio": {
+      "title": "Image Studio",
+      "description": "Generate images visually: pick a style, aspect ratio and count, then preview and download. Also shows recent images, config reload and cleanup."
+    }
+  }
+}

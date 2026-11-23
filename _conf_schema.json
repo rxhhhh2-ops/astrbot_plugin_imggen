@@ -1,0 +1,255 @@
+{
+  "provider": {
+    "type": "string",
+    "description": "生图服务商",
+    "options": ["openai", "gemini", "dashscope", "mock"],
+    "labels": [
+      "OpenAI 兼容接口（OpenAI / 硅基流动 / 智谱 / 各类中转）",
+      "Google Gemini（原生 generateContent）",
+      "阿里云百炼 DashScope（qwen-image 等）",
+      "离线占位图（测试用，不联网）"
+    ],
+    "default": "openai",
+    "obvious_hint": true,
+    "hint": "openai 模式覆盖绝大多数 /v1/images/generations 兼容接口：OpenAI 官方、硅基流动、智谱 CogView、以及各种中转站。换成别家只需改 base_url 与 model。"
+  },
+  "api_key": {
+    "type": "string",
+    "description": "API Key",
+    "secret": true,
+    "default": "",
+    "hint": "留空时可从环境变量 IMGGEN_API_KEY 读取。密钥只用于请求，不会写进日志或回复。"
+  },
+  "base_url": {
+    "type": "string",
+    "description": "接口地址 Base URL",
+    "default": "",
+    "hint": "留空使用服务商默认：openai=https://api.openai.com/v1 ｜ gemini=https://generativelanguage.googleapis.com/v1beta ｜ dashscope=https://dashscope.aliyuncs.com/api/v1"
+  },
+  "model": {
+    "type": "string",
+    "description": "模型名",
+    "default": "",
+    "hint": "留空使用默认：openai=gpt-image-1 ｜ gemini=gemini-2.5-flash-image ｜ dashscope=qwen-image-plus。用中转站时按站点文档填写，如 dall-e-3、cogview-4、flux.1-schnell。"
+  },
+  "openai_response_format": {
+    "type": "string",
+    "description": "OpenAI 兼容接口的图片返回格式",
+    "options": ["auto", "url", "b64"],
+    "labels": [
+      "自动（优先 url，失败退回 b64）",
+      "始终用 url（JSON 最小，最不容易被截断）",
+      "始终用 b64（兼容只支持 base64 的站点）"
+    ],
+    "default": "auto",
+    "hint": "遇到“服务商返回的数据不完整/不是合法 JSON”时优先保持 auto；若中转站不支持 url 可改成 b64。gpt-image 官方固定 b64，只有显式选 url 才会额外试探。"
+  },
+  "quality": {
+    "type": "string",
+    "description": "画质参数（可留空）",
+    "default": "auto",
+    "hint": "auto=不发送该参数。OpenAI 官方支持 low/medium/high（gpt-image）或 standard/hd（dall-e-3）；不支持的服务商会直接忽略或报错，建议保持 auto。"
+  },
+  "backup_enabled": {
+    "type": "bool",
+    "description": "开启备用服务商（主服务失败时自动降级）",
+    "default": false,
+    "hint": "建议开启：主服务超时/5xx/限流时自动切换备用，显著提升可用性。备用与主服务不能是同一个。"
+  },
+  "backup_provider": {
+    "type": "string",
+    "description": "备用服务商",
+    "options": ["mock", "openai", "gemini", "dashscope"],
+    "labels": ["离线占位图", "OpenAI 兼容接口", "Google Gemini", "阿里云百炼"],
+    "default": "mock"
+  },
+  "backup_api_key": {
+    "type": "string",
+    "description": "备用 API Key",
+    "secret": true,
+    "default": "",
+    "hint": "留空时可从环境变量 IMGGEN_BACKUP_API_KEY 读取。"
+  },
+  "backup_base_url": {
+    "type": "string",
+    "description": "备用接口地址 Base URL",
+    "default": ""
+  },
+  "backup_model": {
+    "type": "string",
+    "description": "备用模型名",
+    "default": ""
+  },
+  "fallback_on_error": {
+    "type": "bool",
+    "description": "主服务失败时允许降级到备用",
+    "default": true,
+    "hint": "关闭后主服务报错就直接回复失败原因，不再尝试备用服务商。"
+  },
+  "default_style": {
+    "type": "string",
+    "description": "默认风格（用户没指定、也没识别出关键词时使用）",
+    "default": "general",
+    "hint": "填风格 id 或中文名，如 general、anime、国风水墨。发送 /画风 可看全部风格。"
+  },
+  "default_ratio": {
+    "type": "string",
+    "description": "默认画面比例",
+    "default": "1:1",
+    "hint": "支持 1:1、4:3、3:4、16:9、9:16、3:2、2:3、21:9，也可用 方图/横图/竖图。风格自带比例时以风格为准。"
+  },
+  "size_mode": {
+    "type": "string",
+    "description": "尺寸策略",
+    "options": ["auto", "custom"],
+    "labels": ["自动（按比例匹配服务商支持的标准尺寸）", "自定义（按下方尺寸发送，适合支持任意尺寸的中转站）"],
+    "default": "auto",
+    "hint": "自动模式最稳：OpenAI 官方只接受固定尺寸，插件会自动换算成最接近的比例。"
+  },
+  "custom_size": {
+    "type": "string",
+    "description": "自定义尺寸（size_mode 为 custom 时生效）",
+    "default": "1024x1024",
+    "hint": "格式 宽x高，例如 1024x1024、1280x720。"
+  },
+  "default_images": {
+    "type": "int",
+    "description": "每条请求默认生成张数",
+    "default": 1
+  },
+  "max_images": {
+    "type": "int",
+    "description": "单条请求最多生成张数",
+    "default": 4,
+    "hint": "防止一次刷太多图；用户可用 --n 指定，超出会被截断。"
+  },
+  "max_prompt_chars": {
+    "type": "int",
+    "description": "提示词最大长度（字符）",
+    "default": 800,
+    "hint": "超长会被截断并加省略号，避免服务商拒绝请求。"
+  },
+  "negative_as_hint": {
+    "type": "bool",
+    "description": "把风格的负面词以“避免出现”的形式追加到提示词",
+    "default": true,
+    "hint": "OpenAI/Gemini 不支持负面提示词参数，追加文本能减少畸形；DashScope 会走原生 negative_prompt。"
+  },
+  "auto_trigger": {
+    "type": "bool",
+    "description": "允许关键词自动触发（无需 /画）",
+    "default": true,
+    "obvious_hint": true,
+    "hint": "开启后，群聊/私聊里以“画一张…”“帮我画…”“生图…”等开头的消息会直接开始生图。"
+  },
+  "trigger_prefixes": {
+    "type": "string",
+    "description": "自动触发前缀词（逗号分隔）",
+    "default": "画一张,画一幅,画个,画一个,画张,画只,帮我画,给我画,帮我生成,给我生成,生成一张,生成一幅,生成图片,生成图,生图,绘制一张,绘制一个",
+    "hint": "按“消息以该词开头”匹配。避免填单个“画”字，否则会把“画风怎么样”之类的聊天也当成命令。"
+  },
+  "allow_group": {
+    "type": "bool",
+    "description": "允许在群聊使用",
+    "default": true
+  },
+  "allow_private": {
+    "type": "bool",
+    "description": "允许在私聊使用",
+    "default": true
+  },
+  "admin_only": {
+    "type": "bool",
+    "description": "仅管理员可用",
+    "default": false,
+    "hint": "开启后普通用户调用会被拒绝。"
+  },
+  "blocked_words": {
+    "type": "string",
+    "description": "提示词黑名单（逗号分隔，包含即拒绝）",
+    "default": "",
+    "hint": "留空不拦截。示例：政治人物名,违禁词。仅做基础过滤，不能替代服务商自身的内容审核。"
+  },
+  "cooldown_seconds": {
+    "type": "int",
+    "description": "同一用户冷却时间（秒）",
+    "default": 15,
+    "hint": "0 表示不限制。冷却期内再次请求会提示剩余秒数。"
+  },
+  "daily_limit": {
+    "type": "int",
+    "description": "每人每日最多生成次数",
+    "default": 30,
+    "hint": "0 表示不限制。计数会写入数据目录的 usage.json，升级/重启后仍保留；想清零可删除该文件。"
+  },
+  "max_concurrency": {
+    "type": "int",
+    "description": "全局最大同时生成数（也是 AI 工具后台 worker 数）",
+    "default": 2,
+    "hint": "并发越高越容易触发服务商限流或本机内存压力，建议 1~3；同时决定 /画任务 的后台并行度。"
+  },
+  "queue_timeout": {
+    "type": "int",
+    "description": "排队等待上限（秒）",
+    "default": 120,
+    "hint": "排队超时会给用户“前面还排着队”的提示，而不是无限等待。"
+  },
+  "max_queue": {
+    "type": "int",
+    "description": "排队人数上限",
+    "default": 8,
+    "hint": "超过后直接拒绝新请求，保护服务不被打爆。"
+  },
+  "request_timeout": {
+    "type": "int",
+    "description": "单次生图请求超时（秒）",
+    "default": 180,
+    "hint": "慢速模型（如高清图、排队型接口）可调大；DashScope 整个轮询过程共享该预算。"
+  },
+  "max_retries": {
+    "type": "int",
+    "description": "网络错误/5xx/429 的重试次数",
+    "default": 2,
+    "hint": "仅对可重试错误生效，4xx 参数错误不重试，避免白花钱。"
+  },
+  "max_download_mb": {
+    "type": "int",
+    "description": "单张图片体积上限（MB）",
+    "default": 20,
+    "hint": "超过直接放弃，防止意外下载超大文件。"
+  },
+  "show_progress": {
+    "type": "bool",
+    "description": "生成前先回一条“正在绘制”提示",
+    "default": true,
+    "hint": "长耗时时能安抚用户；不想要过程消息可关闭。"
+  },
+  "show_caption": {
+    "type": "bool",
+    "description": "图片附带一行信息（风格/尺寸/耗时）",
+    "default": true
+  },
+  "show_prompt": {
+    "type": "bool",
+    "description": "在回复中展示最终提示词",
+    "default": false
+  },
+  "keep_days": {
+    "type": "int",
+    "description": "图片保留天数",
+    "default": 7,
+    "hint": "超期文件会在后续生图时自动清理；0 表示不按时间清理。"
+  },
+  "max_files": {
+    "type": "int",
+    "description": "本地最多保留图片数",
+    "default": 2000,
+    "hint": "超出后按最旧优先删除，防止磁盘被撑满。"
+  },
+  "tool_enabled": {
+    "type": "bool",
+    "description": "启用 AI 自动生图工具（llm_tool）",
+    "default": true,
+    "hint": "开启后，大模型在用户要求作图时可自动调用 generate_image 并直接把图发给用户。"
+  }
+}

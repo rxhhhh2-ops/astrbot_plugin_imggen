@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>绘影生图 · 工作台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A8%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">🎨</div>
+        <div class="brand-text">
+          <h1>绘影生图</h1>
+          <p id="subtitle">一句话出图 · 30 种风格 · 选好参数直接生成</p>
+        </div>
+      </div>
+      <div id="pills" class="pills" aria-live="polite"></div>
+      <div class="topbar-actions">
+        <button id="btn-settings" class="btn ghost" type="button">设置</button>
+        <button id="btn-reload" class="btn ghost" type="button">重载配置</button>
+        <button id="btn-cleanup" class="btn ghost danger" type="button">清理旧图</button>
+      </div>
+    </header>
+
+    <div id="banner" class="banner hidden" role="alert"></div>
+
+    <main class="layout">
+      <section class="panel">
+        <label class="field">
+          <span class="field-label">画面描述</span>
+          <textarea id="prompt" rows="7" maxlength="1200"
+            placeholder="例如：雨夜的赛博朋克街道，霓虹灯牌倒映在水洼里，一只戴墨镜的橘猫坐在纸箱上，电影感构图"></textarea>
+          <span class="field-hint"><span id="prompt-count">0</span> 字 · Ctrl + Enter 生成</span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">参考图（可选，图生图）</span>
+          <input id="reference" type="file" accept="image/png,image/jpeg,image/webp" />
+          <span class="field-hint">上传后按参考图改图；OpenAI 兼容服务商支持，最大 10MB</span>
+        </label>
+        <div id="reference-preview" class="reference-preview hidden">
+          <img id="reference-thumb" alt="参考图预览" />
+          <div class="reference-meta">
+            <span id="reference-name"></span>
+            <button id="btn-reference-clear" class="btn ghost small" type="button">移除参考图</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="field grow">
+            <span class="field-label">风格</span>
+            <select id="style"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">比例</span>
+            <select id="ratio">
+              <option value="1:1">1:1 方图</option>
+              <option value="4:3">4:3</option>
+              <option value="3:4">3:4</option>
+              <option value="16:9">16:9 横图</option>
+              <option value="9:16">9:16 竖图</option>
+              <option value="3:2">3:2</option>
+              <option value="2:3">2:3</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">张数</span>
+            <select id="count"></select>
+          </label>
+        </div>
+
+        <div id="style-hint" class="style-hint"></div>
+
+        <details class="advanced">
+          <summary>高级选项</summary>
+          <label class="field">
+            <span class="field-label">附加负面词（可选）</span>
+            <input id="negative" type="text" maxlength="200" placeholder="如：模糊、多余手指、文字乱码" />
+          </label>
+          <label class="check">
+            <input id="show-prompt" type="checkbox" />
+            <span>生成后显示最终提示词</span>
+          </label>
+        </details>
+
+        <button id="btn-generate" class="btn primary" type="button">开始绘制</button>
+        <pre id="final-prompt" class="final-prompt hidden"></pre>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <h2>本次结果</h2>
+          <span id="result-meta" class="muted"></span>
+        </div>
+        <div id="results" class="grid results">
+          <div class="empty">左侧输入描述并点击「开始绘制」，图片会出现在这里。</div>
+        </div>
+
+        <div class="section-head">
+          <h2>最近生成</h2>
+          <button id="btn-history" class="btn ghost small" type="button">刷新</button>
+        </div>
+        <div id="history" class="grid history"></div>
+        <p class="footnote">历史图片按保留策略自动清理；点击卡片可下载原图。</p>
+      </section>
+    </main>
+  </div>
+
+  <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true"
+    aria-labelledby="settings-title" aria-hidden="true">
+    <div class="modal-card">
+      <header class="modal-head">
+        <div>
+          <h2 id="settings-title">插件设置</h2>
+          <p class="muted">更换服务商、模型与生成默认值，保存后立即生效。</p>
+        </div>
+        <button id="btn-settings-close" class="btn ghost small" type="button">关闭</button>
+      </header>
+      <div class="modal-body">
+        <div id="settings-error" class="banner hidden" role="alert"></div>
+
+        <h3 class="settings-group">主服务商</h3>
+        <div class="row">
+          <label class="field grow">
+            <span class="field-label">服务商</span>
+            <select id="set-provider"></select>
+          </label>
+          <label class="field grow">
+            <span class="field-label">模型</span>
+            <input id="set-model" type="text" list="set-model-options" autocomplete="off"
+              placeholder="例如 gpt-image-1" />
+            <datalist id="set-model-options"></datalist>
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">接口地址 base_url</span>
+          <input id="set-base-url" type="text" autocomplete="off" placeholder="留空使用官方默认" />
+        </label>
+        <div class="row">
+          <label class="field grow">
+            <span class="field-label">API Key</span>
+            <input id="set-api-key" type="password" autocomplete="new-password"
+              placeholder="留空表示不修改" />
+          </label>
+          <label class="field">
+            <span class="field-label">画质 quality</span>
+            <select id="set-quality"></select>
+          </label>
+        </div>
+        <p id="set-key-hint" class="field-hint"></p>
+        <label class="check">
+          <input id="set-clear-key" type="checkbox" />
+          <span>清空已保存的 API Key</span>
+        </label>
+        <label class="field">
+          <span class="field-label">OpenAI 兼容返回格式</span>
+          <select id="set-response-format"></select>
+          <span class="field-hint">auto 优先返回 url（响应小、抗截断），不支持时自动退回 b64；仅 OpenAI 兼容生效。</span>
+        </label>
+
+        <h3 class="settings-group">备用服务商</h3>
+        <label class="check">
+          <input id="set-backup-enabled" type="checkbox" />
+          <span>主服务失败时自动切换备用</span>
+        </label>
+        <div id="set-backup-fields" class="backup-fields">
+          <div class="row">
+            <label class="field grow">
+              <span class="field-label">备用服务商</span>
+              <select id="set-backup-provider"></select>
+            </label>
+            <label class="field grow">
+              <span class="field-label">备用模型</span>
+              <input id="set-backup-model" type="text" list="set-backup-model-options"
+                autocomplete="off" placeholder="留空使用默认" />
+              <datalist id="set-backup-model-options"></datalist>
+            </label>
+          </div>
+          <label class="field">
+            <span class="field-label">备用接口地址</span>
+            <input id="set-backup-base-url" type="text" autocomplete="off"
+              placeholder="留空使用官方默认" />
+          </label>
+          <label class="field">
+            <span class="field-label">备用 API Key</span>
+            <input id="set-backup-api-key" type="password" autocomplete="new-password"
+              placeholder="留空表示不修改" />
+          </label>
+          <p id="set-backup-key-hint" class="field-hint"></p>
+          <label class="check">
+            <input id="set-clear-backup-key" type="checkbox" />
+            <span>清空已保存的备用 API Key</span>
+          </label>
+        </div>
+
+        <h3 class="settings-group">生成默认值</h3>
+        <div class="row">
+          <label class="field grow">
+            <span class="field-label">默认风格</span>
+            <select id="set-default-style"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">默认比例</span>
+            <select id="set-default-ratio"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">默认张数</span>
+            <select id="set-default-images"></select>
+          </label>
+        </div>
+        <p class="field-hint">API Key 只写不读，页面只显示掩码。冷却、额度、触发词等更多参数仍可在插件配置页调整。</p>
+      </div>
+      <footer class="modal-foot">
+        <button id="btn-settings-cancel" class="btn ghost" type="button">取消</button>
+        <button id="btn-settings-save" class="btn primary" type="button">保存设置</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay hidden" aria-hidden="true">
+    <div class="spinner"></div>
+    <p id="overlay-text">正在绘制…</p>
+  </div>
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="/api/plugin/page/bridge-sdk.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "styles": {
+    "my_illustration": {
+      "name": "我的插画",
+      "category": "自定义",
+      "summary": "示例：自定义扁平插画风格",
+      "prefix": "现代扁平插画，柔和渐变，简洁几何造型，统一光源",
+      "suffix": "画面干净，留白充足",
+      "negative": "写实照片，杂乱背景，低清晰度",
+      "ratio": "4:3",
+      "aliases": ["我的插画", "mine"]
+    }
+  },
+  "override": {},
+  "disable": []
+}
