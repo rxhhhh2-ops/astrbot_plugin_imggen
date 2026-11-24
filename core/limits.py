@@ -3,6 +3,7 @@
 
 全部在进程内存中维护：AstrBot 重启后计数清零（可接受，且不会误伤用户）。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -166,7 +167,9 @@ class UsageLimiter:
         try:
             await asyncio.wait_for(sem.acquire(), timeout=self.queue_timeout)
         except asyncio.TimeoutError:
-            raise LimitError(f"排队超过 {self.queue_timeout:.0f} 秒仍未轮到，请稍后再试") from None
+            raise LimitError(
+                f"排队超过 {self.queue_timeout:.0f} 秒仍未轮到，请稍后再试"
+            ) from None
         finally:
             self._waiting = max(0, self._waiting - 1)
 
@@ -205,7 +208,9 @@ class UsageLimiter:
 
         bucket = self._today_bucket(user_key)
         if self.daily_limit > 0 and bucket[1] >= self.daily_limit:
-            raise LimitError(f"今天的 {self.daily_limit} 次生图额度已用完，明天再来吧～")
+            raise LimitError(
+                f"今天的 {self.daily_limit} 次生图额度已用完，明天再来吧～"
+            )
 
         sem = self._semaphore()
         if sem.locked() and self._waiting >= self.max_queue:
@@ -215,7 +220,9 @@ class UsageLimiter:
         try:
             await asyncio.wait_for(sem.acquire(), timeout=self.queue_timeout)
         except asyncio.TimeoutError:
-            raise LimitError(f"排队超过 {self.queue_timeout:.0f} 秒仍未轮到，请稍后再试") from None
+            raise LimitError(
+                f"排队超过 {self.queue_timeout:.0f} 秒仍未轮到，请稍后再试"
+            ) from None
         finally:
             self._waiting = max(0, self._waiting - 1)
 
@@ -241,7 +248,10 @@ class UsageLimiter:
             bucket = self._daily.get(user_key)
             if bucket and bucket[0] == date.today().isoformat() and bucket[1] > 0:
                 bucket[1] -= 1
-            if self._total_today[0] == date.today().isoformat() and self._total_today[1] > 0:
+            if (
+                self._total_today[0] == date.today().isoformat()
+                and self._total_today[1] > 0
+            ):
                 self._total_today[1] -= 1
         self._save_state()
 
@@ -250,7 +260,9 @@ class UsageLimiter:
             "inflight": len(self._inflight),
             "waiting": self._waiting,
             "max_concurrency": self.max_concurrency,
-            "total_today": self._total_today[1] if self._total_today[0] == date.today().isoformat() else 0,
+            "total_today": self._total_today[1]
+            if self._total_today[0] == date.today().isoformat()
+            else 0,
         }
         if user_key:
             bucket = self._today_bucket(user_key)

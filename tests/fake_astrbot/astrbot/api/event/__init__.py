@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """假事件/过滤器：与真实 AstrBot 的关键签名保持一致。"""
+
 import asyncio
 
 from astrbot.api import llm_tool  # noqa: F401  兼容 from astrbot.api import llm_tool

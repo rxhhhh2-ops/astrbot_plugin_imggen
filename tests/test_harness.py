@@ -3,6 +3,7 @@
 
 直接 python tests/test_harness.py 运行，不需要真实 AstrBot / 网络 / API Key。
 """
+
 import asyncio
 import base64
 import importlib.util
@@ -40,7 +41,9 @@ def check(cond, msg):
 
 
 def load_plugin():
-    spec = importlib.util.spec_from_file_location("imggen_main", os.path.join(ROOT, "main.py"))
+    spec = importlib.util.spec_from_file_location(
+        "imggen_main", os.path.join(ROOT, "main.py")
+    )
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module  # dataclasses 需要能从 sys.modules 找到模块
     spec.loader.exec_module(module)
@@ -139,7 +142,9 @@ async def main():
     print("== 指定风格 ==")
     event = AstrMessageEvent("画 国风水墨 山间小筑")
     await drive(plugin.draw_cmd, event)
-    check(any("国风水墨" in text for text in chain_texts(event)), "按名称指定国风水墨风格")
+    check(
+        any("国风水墨" in text for text in chain_texts(event)), "按名称指定国风水墨风格"
+    )
 
     event = AstrMessageEvent("画 二次元 猫耳少女")
     await drive(plugin.draw_cmd, event)
@@ -177,11 +182,17 @@ async def main():
     event = AstrMessageEvent("画风")
     await drive(plugin.styles_cmd, event)
     check(event.texts and "可用风格" in event.texts[-1], "/画风 列出风格")
-    check("国风水墨" in event.texts[-1] and "二次元" in event.texts[-1], "列表包含中英文名")
+    check(
+        "国风水墨" in event.texts[-1] and "二次元" in event.texts[-1],
+        "列表包含中英文名",
+    )
 
     event = AstrMessageEvent("画风 详情 国风水墨")
     await drive(plugin.styles_cmd, event)
-    check("风格前缀" in event.texts[-1] and "guofeng" in event.texts[-1], "/画风 详情 展示模板")
+    check(
+        "风格前缀" in event.texts[-1] and "guofeng" in event.texts[-1],
+        "/画风 详情 展示模板",
+    )
 
     print("== 状态 ==")
     event = AstrMessageEvent("画状态")
@@ -257,8 +268,7 @@ async def main():
     await drain_bg(plugin)
     new_sent = plugin.context.sent[sent_before:]
     check(
-        bool(new_sent)
-        and sum(isinstance(c, FakeImage) for c in new_sent[-1][1]) == 2,
+        bool(new_sent) and sum(isinstance(c, FakeImage) for c in new_sent[-1][1]) == 2,
         "主动发送的消息包含 2 张图片",
     )
 
@@ -325,7 +335,9 @@ async def main():
     )
     await drain_bg(job_plugin)
     await asyncio.sleep(0)
-    check(job_plugin._tool_jobs[job_id]["status"] == "cancelled", "任务记录标记为已取消")
+    check(
+        job_plugin._tool_jobs[job_id]["status"] == "cancelled", "任务记录标记为已取消"
+    )
     check(len(job_plugin.context.sent) == 0, "取消后不会发送图片")
 
     print("== 排队任务取消 ==")
@@ -429,7 +441,10 @@ async def main():
     unconfigured = make_plugin(provider="openai", api_key="", model="")
     event = AstrMessageEvent("画 猫")
     await drive(unconfigured.draw_cmd, event)
-    check(any("还没有可用的生图服务" in text for text in event.texts), "缺配置时给出明确指引")
+    check(
+        any("还没有可用的生图服务" in text for text in event.texts),
+        "缺配置时给出明确指引",
+    )
 
     print("== 主服务失败 → 备用降级 ==")
     fallback = make_plugin(
@@ -445,7 +460,9 @@ async def main():
     event = AstrMessageEvent("画 降级测试")
     await drive(fallback.draw_cmd, event)
     check(len(chain_paths(event)) == 1, "主服务不可达时由备用服务商出图")
-    check(any("绘制完成" in text for text in chain_texts(event)), "降级后仍返回完成说明")
+    check(
+        any("绘制完成" in text for text in chain_texts(event)), "降级后仍返回完成说明"
+    )
 
     print("== 图生图（QQ 附图） ==")
     ref_plugin = make_plugin()
@@ -454,12 +471,18 @@ async def main():
     ref_paths = chain_paths(ref_event)
     check(len(ref_paths) == 1, "附图后返回 1 张图")
     check(Path(ref_paths[0]).read_bytes() == REF_PNG, "mock 图生图原样返回参考图")
-    check(any("图生图完成" in text for text in chain_texts(ref_event)), "回复标注图生图完成")
+    check(
+        any("图生图完成" in text for text in chain_texts(ref_event)),
+        "回复标注图生图完成",
+    )
 
     print("== 插件页面接口 ==")
     check(len(plugin.context.web_apis) == 9, "启动时注册了 9 个界面接口")
     check(
-        any(item["route"] == "/astrbot_plugin_imggen/state" for item in plugin.context.web_apis),
+        any(
+            item["route"] == "/astrbot_plugin_imggen/state"
+            for item in plugin.context.web_apis
+        ),
         "接口路由带插件名前缀",
     )
 
@@ -498,7 +521,9 @@ async def main():
     thumb = await plugin.api_thumb()
     check(thumb["status"] == "ok" and thumb["data"]["thumb"], "thumb 返回缩略图")
     image = await plugin.api_image()
-    check(isinstance(image, dict) and Path(image["path"]).is_file(), "image 返回文件响应")
+    check(
+        isinstance(image, dict) and Path(image["path"]).is_file(), "image 返回文件响应"
+    )
 
     plugin._query_str = lambda key, default="": "../etc/passwd"
     bad = await plugin.api_thumb()

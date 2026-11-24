@@ -14,6 +14,7 @@
 - 本地图片按“超期 + 超量”自动清理，避免撑满磁盘；
 - 配置缺失/写错时给出明确指引，不抛异常刷屏。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -108,7 +109,7 @@ except ImportError:  # 作为顶层模块加载（测试/独立运行）
     from core.styles import Style, StyleBook  # type: ignore
 
 PLUGIN_NAME = "astrbot_plugin_imggen"
-PLUGIN_VERSION = "1.3.3"
+PLUGIN_VERSION = "1.3.4"
 COMMAND_NAMES = ("画", "绘画", "画图", "生图", "draw", "imagine", "绘制")
 STYLE_COMMAND_NAMES = ("画风", "风格", "画风列表")
 STATUS_COMMAND_NAMES = ("画状态", "生图状态", "绘图状态")
@@ -170,7 +171,9 @@ _RESPONSE_FORMATS = ("auto", "url", "b64")
 # 图生图参考图：上限与允许格式（OpenAI 兼容 edits 支持 png/jpeg/webp）
 _MAX_REFERENCE_BYTES = 10 * 1024 * 1024
 _ALLOWED_REFERENCE_MIMES = {"image/png", "image/jpeg", "image/webp"}
-_DEFAULT_EDIT_PROMPT = "在保持原图主体与构图的前提下，重新绘制并提升细节、光影与整体质感"
+_DEFAULT_EDIT_PROMPT = (
+    "在保持原图主体与构图的前提下，重新绘制并提升细节、光影与整体质感"
+)
 
 
 def _mask_secret(value: str) -> str:
@@ -191,13 +194,16 @@ def _config_value(mapping, key: str, default=None):
         return default
     return default if value is None else value
 
+
 HELP_TEXT = USAGE + "\n\n也可以在聊天里直接说“画一张……”“帮我画……”来触发。"
 
 _HELP_WORDS = {"help", "帮助", "?", "？", "画帮助", "用法"}
 
 # 参数解析（支持 --n 2 / --比例 16:9 / --风格 国风 与 比例:16:9 两种写法）
 _NUM_FLAG = re.compile(r"--(?:n|num|数量)\s*[=:：]?\s*(\d+)", re.I)
-_RATIO_FLAG = re.compile(r"--(?:ratio|size|比例|尺寸)\s*[=:：]?\s*([0-9a-zA-Z:：x×*]+)", re.I)
+_RATIO_FLAG = re.compile(
+    r"--(?:ratio|size|比例|尺寸)\s*[=:：]?\s*([0-9a-zA-Z:：x×*]+)", re.I
+)
 _STYLE_FLAG = re.compile(r"--(?:style|风格)\s*[=:：]?\s*([^\s，,]+)", re.I)
 _INLINE_STYLE = re.compile(r"(?:风格|画风)\s*[=:：]\s*([^\s，,]+)")
 _INLINE_RATIO = re.compile(r"(?:比例|尺寸)\s*[=:：]\s*([0-9a-zA-Z:：x×*]+)")
@@ -209,15 +215,15 @@ class RequestSpec:
     style: Style | None = None
     ratio: str = "1:1"
     count: int = 1
-    error: str = ""    # 非空则直接回复该文本并结束
-    notice: str = ""   # 需要随结果一起提示的说明
+    error: str = ""  # 非空则直接回复该文本并结束
+    notice: str = ""  # 需要随结果一起提示的说明
 
 
 def _extract(pattern: re.Pattern, text: str) -> tuple[str | None, str]:
     match = pattern.search(text)
     if not match:
         return None, text
-    return match.group(1), (text[: match.start()] + " " + text[match.end():])
+    return match.group(1), (text[: match.start()] + " " + text[match.end() :])
 
 
 class ImageGenPlugin(Star):
@@ -301,7 +307,9 @@ class ImageGenPlugin(Star):
         )
         self._chain = build_chain(self.settings)
         if not self._chain:
-            logger.warning("[imggen] 没有可用的生图服务商（配置不完整），/画 将返回配置指引")
+            logger.warning(
+                "[imggen] 没有可用的生图服务商（配置不完整），/画 将返回配置指引"
+            )
         try:
             self._ensure_tool_workers()
         except Exception as exc:  # noqa: BLE001
@@ -312,7 +320,9 @@ class ImageGenPlugin(Star):
             try:
                 import aiohttp
             except ImportError as exc:  # pragma: no cover - AstrBot 自带
-                raise ProviderError(f"缺少 aiohttp 依赖：{exc}", retryable=False) from None
+                raise ProviderError(
+                    f"缺少 aiohttp 依赖：{exc}", retryable=False
+                ) from None
             self._http = aiohttp.ClientSession()
         return self._http
 
@@ -442,7 +452,7 @@ class ImageGenPlugin(Star):
             found = book.resolve_token(candidate)
             if found is not None:
                 style_name = candidate
-                trimmed = trimmed[len(tokens[0]):]
+                trimmed = trimmed[len(tokens[0]) :]
 
         prompt = sanitize(" ".join(trimmed.split()), settings.max_prompt_chars)
         if not prompt:
@@ -458,7 +468,9 @@ class ImageGenPlugin(Star):
         if style is None:
             style = book.get(settings.default_style)
 
-        ratio = parse_ratio(ratio_raw or style.ratio or settings.default_ratio, settings.default_ratio)
+        ratio = parse_ratio(
+            ratio_raw or style.ratio or settings.default_ratio, settings.default_ratio
+        )
         return RequestSpec(
             prompt=prompt,
             style=style,
@@ -503,12 +515,14 @@ class ImageGenPlugin(Star):
         if not text:
             raise ProviderError("参考图地址为空", retryable=False)
         if text.startswith("base64://"):
-            text = "data:image/png;base64," + text[len("base64://"):]
+            text = "data:image/png;base64," + text[len("base64://") :]
         if text.startswith("data:"):
             try:
                 data = decode_base64(text)
             except ProviderError as exc:
-                raise ProviderError(f"参考图解码失败：{exc.message}", retryable=False) from None
+                raise ProviderError(
+                    f"参考图解码失败：{exc.message}", retryable=False
+                ) from None
             return self._make_reference(data)
 
         path_text = text[7:] if text.startswith("file://") else text
@@ -523,7 +537,9 @@ class ImageGenPlugin(Star):
                     secret=self.settings.primary.api_key,
                 )
             except ProviderError as exc:
-                raise ProviderError(f"参考图下载失败：{exc.message}", retryable=False) from None
+                raise ProviderError(
+                    f"参考图下载失败：{exc.message}", retryable=False
+                ) from None
             return self._make_reference(data)
 
         try:
@@ -563,7 +579,7 @@ class ImageGenPlugin(Star):
         if not text:
             raise ProviderError("参考图为空", retryable=False)
         if text.startswith("base64://"):
-            text = "data:image/png;base64," + text[len("base64://"):]
+            text = "data:image/png;base64," + text[len("base64://") :]
         if not text.startswith("data:"):
             text = "data:image/png;base64," + text
         if len(text) > _MAX_REFERENCE_BYTES * 2:
@@ -571,7 +587,9 @@ class ImageGenPlugin(Star):
         try:
             data = decode_base64(text)
         except ProviderError as exc:
-            raise ProviderError(f"参考图解码失败：{exc.message}", retryable=False) from None
+            raise ProviderError(
+                f"参考图解码失败：{exc.message}", retryable=False
+            ) from None
         return self._make_reference(data)
 
     async def _extract_reference_image(
@@ -682,14 +700,21 @@ class ImageGenPlugin(Star):
             except ProviderError as exc:
                 if self._should_trip_breaker(exc):
                     self._breaker.record_failure(key)
-                logger.warning(f"[imggen] 服务商 {provider.kind} 生成失败：{exc.message}")
+                logger.warning(
+                    f"[imggen] 服务商 {provider.kind} 生成失败：{exc.message}"
+                )
                 errors.append((provider.kind, exc))
                 if not self.settings.fallback_on_error:
                     break
             except Exception as exc:  # noqa: BLE001 - 适配器不应抛出其它异常
                 self._breaker.record_failure(key)
                 logger.error(f"[imggen] 服务商 {provider.kind} 异常：{exc!r}")
-                errors.append((provider.kind, ProviderError(f"内部错误：{exc.__class__.__name__}")))
+                errors.append(
+                    (
+                        provider.kind,
+                        ProviderError(f"内部错误：{exc.__class__.__name__}"),
+                    )
+                )
                 if not self.settings.fallback_on_error:
                     break
 
@@ -926,9 +951,7 @@ class ImageGenPlugin(Star):
             except asyncio.TimeoutError:
                 elapsed = int(time.monotonic() - started)
                 logger.info(f"[imggen] 工具生成仍在进行：{elapsed}s")
-                await self._send_text(
-                    umo, f"🖌️ 图片仍在生成中（已等待 {elapsed} 秒）…"
-                )
+                await self._send_text(umo, f"🖌️ 图片仍在生成中（已等待 {elapsed} 秒）…")
             except asyncio.CancelledError:
                 raise
 
@@ -1041,7 +1064,11 @@ class ImageGenPlugin(Star):
         # 配置指引类消息本身就是给用户看的，不再套一层“生成失败”
         if exc.message.startswith(("⚠️", "🔒", "🚫", "⏳")):
             return exc.message
-        if "不是合法 JSON" in exc.message or "响应不完整" in exc.message or "下载不完整" in exc.message:
+        if (
+            "不是合法 JSON" in exc.message
+            or "响应不完整" in exc.message
+            or "下载不完整" in exc.message
+        ):
             return (
                 "❌ 生成失败：服务商返回的数据不完整或格式异常（常见于中转站截断响应）。"
                 "请重试；若持续出现，请检查 base_url 或更换服务商。\n"
@@ -1236,7 +1263,9 @@ class ImageGenPlugin(Star):
                 registered += 1
             except TypeError:
                 try:
-                    register(route=route, view_handler=handler, methods=methods, desc=desc)
+                    register(
+                        route=route, view_handler=handler, methods=methods, desc=desc
+                    )
                     registered += 1
                 except Exception as exc:  # noqa: BLE001
                     logger.warning(f"[imggen] 注册接口 {endpoint} 失败：{exc!r}")
@@ -1361,7 +1390,9 @@ class ImageGenPlugin(Star):
             image.thumbnail((max_edge, max_edge))
             buffer = io.BytesIO()
             image.save(buffer, format="JPEG", quality=85)
-            return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode()
+            return (
+                "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode()
+            )
         except Exception:  # noqa: BLE001
             try:
                 data = path.read_bytes()
@@ -1502,7 +1533,9 @@ class ImageGenPlugin(Star):
                 _config_value(self.config, "provider", settings.primary.kind)
             ).lower()
             provider = (
-                raw_provider if raw_provider in PROVIDER_KINDS else settings.primary.kind
+                raw_provider
+                if raw_provider in PROVIDER_KINDS
+                else settings.primary.kind
             )
             raw_model = as_str(_config_value(self.config, "model", ""))
             raw_base = as_str(_config_value(self.config, "base_url", ""))
@@ -1511,9 +1544,7 @@ class ImageGenPlugin(Star):
                 _config_value(self.config, "backup_provider", "mock")
             ).lower()
             backup_provider = (
-                raw_backup_provider
-                if raw_backup_provider in PROVIDER_KINDS
-                else "mock"
+                raw_backup_provider if raw_backup_provider in PROVIDER_KINDS else "mock"
             )
             backup_key = (
                 settings.backup.api_key
@@ -1601,14 +1632,18 @@ class ImageGenPlugin(Star):
             model = as_str(payload.get("model", ""))[:200]
             base_url = as_str(payload.get("base_url", ""))[:500]
             if base_url and not base_url.lower().startswith(("http://", "https://")):
-                return self._web_err("接口地址必须以 http:// 或 https:// 开头（留空使用官方默认）")
+                return self._web_err(
+                    "接口地址必须以 http:// 或 https:// 开头（留空使用官方默认）"
+                )
 
             api_key = as_str(payload.get("api_key", ""))
             if len(api_key) > 500:
                 return self._web_err("API Key 过长，请检查是否粘贴了多余内容")
             clear_key = as_bool(payload.get("clear_api_key", False), False)
 
-            quality = as_str(payload.get("quality", settings.primary.quality or "auto")).lower()
+            quality = as_str(
+                payload.get("quality", settings.primary.quality or "auto")
+            ).lower()
             if quality not in _QUALITY_OPTIONS:
                 return self._web_err("画质选项不合法")
             response_format = as_str(
@@ -1620,7 +1655,9 @@ class ImageGenPlugin(Star):
             backup_enabled = as_bool(payload.get("backup_enabled", False), False)
             backup_provider = as_str(payload.get("backup_provider", "mock")).lower()
             if backup_provider not in PROVIDER_KINDS:
-                return self._web_err(f"不支持的备用服务商：{truncate(backup_provider, 40)}")
+                return self._web_err(
+                    f"不支持的备用服务商：{truncate(backup_provider, 40)}"
+                )
             backup_model = as_str(payload.get("backup_model", ""))[:200]
             backup_base_url = as_str(payload.get("backup_base_url", ""))[:500]
             if backup_base_url and not backup_base_url.lower().startswith(
@@ -1630,10 +1667,16 @@ class ImageGenPlugin(Star):
             backup_api_key = as_str(payload.get("backup_api_key", ""))
             if len(backup_api_key) > 500:
                 return self._web_err("备用 API Key 过长，请检查是否粘贴了多余内容")
-            clear_backup_key = as_bool(payload.get("clear_backup_api_key", False), False)
+            clear_backup_key = as_bool(
+                payload.get("clear_backup_api_key", False), False
+            )
 
             raw_style = as_str(payload.get("default_style", settings.default_style))
-            style = book.resolve(raw_style) if raw_style else book.get(settings.default_style)
+            style = (
+                book.resolve(raw_style)
+                if raw_style
+                else book.get(settings.default_style)
+            )
             if style is None:
                 return self._web_err(f"未知风格：{truncate(raw_style, 40)}")
 
@@ -1694,15 +1737,16 @@ class ImageGenPlugin(Star):
                     warning = "设置已生效，但写回配置文件失败，重启后可能丢失"
             else:
                 persisted = False
-                warning = "设置已生效，但当前 AstrBot 不支持写回配置，重启后可能恢复原值"
+                warning = (
+                    "设置已生效，但当前 AstrBot 不支持写回配置，重启后可能恢复原值"
+                )
 
             self._apply_reload()
             ready = self.settings.chain_ready()
             if not ready:
                 warning = (
-                    (warning + "；" if warning else "")
-                    + "服务商尚未配置完整（检查 API Key / 模型）"
-                )
+                    warning + "；" if warning else ""
+                ) + "服务商尚未配置完整（检查 API Key / 模型）"
             return self._web_ok(
                 {
                     "persisted": persisted,
@@ -1727,9 +1771,13 @@ class ImageGenPlugin(Star):
             self._ensure()
             settings = self.settings
             if not settings.chain_ready():
-                return self._web_err("还没有可用的生图服务，请先在插件配置中填写 API Key / 模型")
+                return self._web_err(
+                    "还没有可用的生图服务，请先在插件配置中填写 API Key / 模型"
+                )
 
-            prompt = sanitize(str(payload.get("prompt") or ""), settings.max_prompt_chars)
+            prompt = sanitize(
+                str(payload.get("prompt") or ""), settings.max_prompt_chars
+            )
             reference = None
             raw_image = str(payload.get("image") or "").strip()
             if raw_image:
@@ -1826,7 +1874,9 @@ class ImageGenPlugin(Star):
             except asyncio.TimeoutError:
                 return self._web_err("生成超时，请稍后重试或换用更快的模型")
             except ProviderError as exc:
-                return self._web_err(self._friendly_error(exc).replace("❌ 生成失败：", ""))
+                return self._web_err(
+                    self._friendly_error(exc).replace("❌ 生成失败：", "")
+                )
             except Exception as exc:  # noqa: BLE001
                 logger.error(f"[imggen] 界面生成失败：{exc!r}")
                 return self._web_err("生成失败：插件内部错误，请查看 AstrBot 日志")
@@ -1918,7 +1968,9 @@ class ImageGenPlugin(Star):
             name = arg[2:].strip()
             style = book.resolve(name) if name else None
             if style is None:
-                yield event.plain_result(f"未找到风格「{name}」。发送 /画风 查看全部风格。")
+                yield event.plain_result(
+                    f"未找到风格「{name}」。发送 /画风 查看全部风格。"
+                )
                 return
             yield event.plain_result(self._style_detail(style))
             return
@@ -1926,7 +1978,9 @@ class ImageGenPlugin(Star):
         if arg and arg not in ("列表", "全部", "list", "all"):
             style = book.resolve(arg)
             if style is None:
-                yield event.plain_result(f"未找到风格「{arg}」。发送 /画风 查看全部风格。")
+                yield event.plain_result(
+                    f"未找到风格「{arg}」。发送 /画风 查看全部风格。"
+                )
                 return
             yield event.plain_result(self._style_detail(style))
             return
@@ -1997,9 +2051,7 @@ class ImageGenPlugin(Star):
         try:
             self._ensure()
             jobs = self._visible_jobs(event)
-            active = [
-                job for job in jobs if job.get("status") in ("queued", "running")
-            ]
+            active = [job for job in jobs if job.get("status") in ("queued", "running")]
             finished = [
                 job for job in jobs if job.get("status") not in ("queued", "running")
             ][:5]
@@ -2037,9 +2089,7 @@ class ImageGenPlugin(Star):
                 targets = [job]
             else:
                 targets = [
-                    job
-                    for job in jobs
-                    if job.get("status") in ("queued", "running")
+                    job for job in jobs if job.get("status") in ("queued", "running")
                 ]
             if not targets:
                 yield event.plain_result("没有可取消的任务。")
@@ -2097,7 +2147,11 @@ class ImageGenPlugin(Star):
             yield event.plain_result("❌ 重载失败，请查看日志。")
 
     def _style_detail(self, style: Style) -> str:
-        lines = [f"【{style.name}】id：{style.id}", f"分类：{style.category}", f"简介：{style.summary}"]
+        lines = [
+            f"【{style.name}】id：{style.id}",
+            f"分类：{style.category}",
+            f"简介：{style.summary}",
+        ]
         if style.aliases:
             lines.append("别名：" + "、".join(style.aliases))
         if style.ratio:
@@ -2141,7 +2195,10 @@ class ImageGenPlugin(Star):
         if not text or text.startswith("/"):
             return
         first = re.split(r"\s+", text, maxsplit=1)[0].lower()
-        if first in {name.lower() for name in (*COMMAND_NAMES, *STYLE_COMMAND_NAMES, *STATUS_COMMAND_NAMES)}:
+        if first in {
+            name.lower()
+            for name in (*COMMAND_NAMES, *STYLE_COMMAND_NAMES, *STATUS_COMMAND_NAMES)
+        }:
             return
         prefix = next((p for p in settings.trigger_prefixes if text.startswith(p)), "")
         if not prefix:
@@ -2194,15 +2251,19 @@ class ImageGenPlugin(Star):
 
         # 大模型常自造参数名：尽量吸收，而不是让 TypeError 冒出去
         if not prompt:
-            prompt = str(kwargs.get("description") or kwargs.get("text") or kwargs.get("描述") or "")
+            prompt = str(
+                kwargs.get("description")
+                or kwargs.get("text")
+                or kwargs.get("描述")
+                or ""
+            )
         if not style or style == "auto":
-            style = str(kwargs.get("风格") or kwargs.get("style_name") or style or "auto")
+            style = str(
+                kwargs.get("风格") or kwargs.get("style_name") or style or "auto"
+            )
         if not aspect_ratio:
             aspect_ratio = str(
-                kwargs.get("ratio")
-                or kwargs.get("size")
-                or kwargs.get("比例")
-                or ""
+                kwargs.get("ratio") or kwargs.get("size") or kwargs.get("比例") or ""
             )
         if not num_images:
             raw_count = kwargs.get("n") or kwargs.get("count") or kwargs.get("数量")
@@ -2299,13 +2360,14 @@ class ImageGenPlugin(Star):
 
     @llm_tool(name="list_image_styles")
     async def list_styles_tool(self, event: AstrMessageEvent, **kwargs) -> str:
-        """列出当前可用的生图风格及其 id。当用户询问“有哪些画风/风格”“能画什么风格”，或需要为 generate_image 挑选风格时调用。无参数。
-        """
+        """列出当前可用的生图风格及其 id。当用户询问“有哪些画风/风格”“能画什么风格”，或需要为 generate_image 挑选风格时调用。无参数。"""
         try:
             book = self._stylebook()
             lines = [f"共 {len(book.styles)} 种风格（括号内为 id）："]
             for category, styles in book.grouped().items():
-                lines.append(f"【{category}】" + "、".join(f"{s.name}({s.id})" for s in styles))
+                lines.append(
+                    f"【{category}】" + "、".join(f"{s.name}({s.id})" for s in styles)
+                )
             return "\n".join(lines)
         except Exception as exc:  # noqa: BLE001
             logger.error(f"[imggen] 列风格失败：{exc!r}")

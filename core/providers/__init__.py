@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """服务商注册表与构建工厂。"""
+
 from __future__ import annotations
 
 from typing import Type
@@ -19,7 +20,9 @@ _PROVIDER_CLASSES: dict[str, Type[ImageProvider]] = {
 }
 
 
-def build_provider(profile: ProviderProfile | None, settings: RuntimeSettings) -> ImageProvider | None:
+def build_provider(
+    profile: ProviderProfile | None, settings: RuntimeSettings
+) -> ImageProvider | None:
     """按配置构造适配器；配置不完整（如缺 key）时返回 None。"""
     if profile is None or not profile.ready():
         return None

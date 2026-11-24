@@ -6,6 +6,7 @@
 - 文件名带时间戳与随机串，避免并发覆盖；
 - 清理只作用于插件自己的数据目录，按“超期 + 超量”两条规则兜底磁盘。
 """
+
 from __future__ import annotations
 
 import os
@@ -34,7 +35,9 @@ class ImageStore:
             raise ValueError("图片数据为空")
         detected = sniff_image(data)
         if not detected:
-            raise ValueError("返回内容不是可识别的图片（可能被服务商拒绝或返回了错误页）")
+            raise ValueError(
+                "返回内容不是可识别的图片（可能被服务商拒绝或返回了错误页）"
+            )
         real_ext, _mime = detected
         ext = real_ext if not ext else ext.lower().lstrip(".")
         if ext not in ("png", "jpg", "webp", "gif"):
@@ -143,5 +146,7 @@ class ImageStore:
             "count": count,
             "bytes": total,
             "root": str(self.root),
-            "oldest": datetime.fromtimestamp(oldest).strftime("%Y-%m-%d %H:%M") if oldest else "-",
+            "oldest": datetime.fromtimestamp(oldest).strftime("%Y-%m-%d %H:%M")
+            if oldest
+            else "-",
         }

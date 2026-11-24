@@ -5,6 +5,7 @@
       GET  /tasks/{task_id}
 适用模型：qwen-image / qwen-image-plus / wanx2.x 系列等。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -32,7 +33,9 @@ class DashScopeProvider(ImageProvider):
         base = self.base_url.rstrip("/")
         return f"{base}/tasks/{task_id}"
 
-    async def generate(self, session, *, prompt, negative, n, ratio) -> list[ImageResult]:
+    async def generate(
+        self, session, *, prompt, negative, n, ratio
+    ) -> list[ImageResult]:
         size = self.size_for(ratio)
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -69,7 +72,9 @@ class DashScopeProvider(ImageProvider):
 
         task_id = output.get("task_id") or output.get("taskId")
         if not task_id:
-            raise ProviderError("未获取到任务 ID，请检查模型是否支持文生图", retryable=False)
+            raise ProviderError(
+                "未获取到任务 ID，请检查模型是否支持文生图", retryable=False
+            )
 
         deadline = time.monotonic() + self.request_timeout
         last_status = "PENDING"
@@ -98,9 +103,13 @@ class DashScopeProvider(ImageProvider):
                 message = out.get("message") or out.get("code") or status
                 raise ProviderError(f"生图任务失败：{message}", retryable=False)
 
-        raise ProviderError(f"生图任务超时未完成（最后状态 {last_status}）", retryable=True)
+        raise ProviderError(
+            f"生图任务超时未完成（最后状态 {last_status}）", retryable=True
+        )
 
-    async def _download_all(self, session, items: list[dict], size) -> list[ImageResult]:
+    async def _download_all(
+        self, session, items: list[dict], size
+    ) -> list[ImageResult]:
         results: list[ImageResult] = []
         errors: list[ProviderError] = []
         for item in items:
@@ -109,7 +118,11 @@ class DashScopeProvider(ImageProvider):
             except ProviderError as exc:
                 errors.append(exc)
         if not results:
-            raise errors[0] if errors else ProviderError("结果图解析失败", retryable=False)
+            raise (
+                errors[0]
+                if errors
+                else ProviderError("结果图解析失败", retryable=False)
+            )
         return results
 
     @staticmethod
@@ -121,4 +134,8 @@ class DashScopeProvider(ImageProvider):
                 raw = task_result.get("images") or task_result.get("results")
         if not isinstance(raw, list):
             return []
-        return [item for item in raw if isinstance(item, dict) and (item.get("url") or item.get("b64_json"))]
+        return [
+            item
+            for item in raw
+            if isinstance(item, dict) and (item.get("url") or item.get("b64_json"))
+        ]

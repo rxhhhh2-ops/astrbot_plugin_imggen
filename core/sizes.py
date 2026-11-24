@@ -7,6 +7,7 @@
 - Gemini 走原始比例（aspectRatio）；
 - mock 本地画布任意尺寸。
 """
+
 from __future__ import annotations
 
 import math
@@ -26,11 +27,25 @@ RATIOS: dict[str, tuple[int, int]] = {
 }
 
 RATIO_ALIASES: dict[str, str] = {
-    "方": "1:1", "方形": "1:1", "方图": "1:1", "正方形": "1:1", "square": "1:1",
-    "横": "16:9", "横图": "16:9", "横向": "16:9", "宽": "16:9", "宽屏": "16:9",
-    "landscape": "16:9", "banner": "16:9",
-    "竖": "9:16", "竖图": "9:16", "竖向": "9:16", "竖屏": "9:16", "portrait": "9:16",
-    "手机壁纸": "9:16", "超宽": "21:9",
+    "方": "1:1",
+    "方形": "1:1",
+    "方图": "1:1",
+    "正方形": "1:1",
+    "square": "1:1",
+    "横": "16:9",
+    "横图": "16:9",
+    "横向": "16:9",
+    "宽": "16:9",
+    "宽屏": "16:9",
+    "landscape": "16:9",
+    "banner": "16:9",
+    "竖": "9:16",
+    "竖图": "9:16",
+    "竖向": "9:16",
+    "竖屏": "9:16",
+    "portrait": "9:16",
+    "手机壁纸": "9:16",
+    "超宽": "21:9",
 }
 
 # OpenAI 官方三档（gpt-image-1）与 dall-e-3 三档
@@ -95,7 +110,9 @@ def parse_ratio(raw, default: str = "1:1") -> str:
     """把各种写法归一化到标准比例键。无法识别时返回 default。"""
     if raw is None:
         return default
-    text = str(raw).strip().lower().replace("：", ":").replace("×", ":").replace("x", ":")
+    text = (
+        str(raw).strip().lower().replace("：", ":").replace("×", ":").replace("x", ":")
+    )
     text = re.sub(r"\s+", "", text)
     if not text:
         return default
@@ -150,7 +167,9 @@ def scale(ratio: str, base_edge: int = 1024) -> tuple[int, int]:
     return _snap(w), _snap(h)
 
 
-def closest_by_ratio(table: dict[str, str], ratio: str, default_key: str = "1:1") -> str:
+def closest_by_ratio(
+    table: dict[str, str], ratio: str, default_key: str = "1:1"
+) -> str:
     """从服务商支持的尺寸表里挑比例最接近的一项。"""
     if ratio in table:
         return table[ratio]
@@ -198,17 +217,23 @@ def resolve_size(
             width, height = parse_dimensions(custom_size, scale(ratio, base_edge))
             return SizeSpec(width, height, f"{width}*{height}")
         value = closest_by_ratio(DASHSCOPE_SIZES, ratio)
-        width, height = parse_dimensions(value.replace("*", "x"), scale(ratio, base_edge))
+        width, height = parse_dimensions(
+            value.replace("*", "x"), scale(ratio, base_edge)
+        )
         return SizeSpec(width, height, value)
 
     if provider_kind == "gemini":
         width, height = (
-            parse_dimensions(custom_size, scale(ratio, base_edge)) if custom else scale(ratio, base_edge)
+            parse_dimensions(custom_size, scale(ratio, base_edge))
+            if custom
+            else scale(ratio, base_edge)
         )
         return SizeSpec(width, height, ratio)
 
     # mock 及未知服务商：本地画布
     width, height = (
-        parse_dimensions(custom_size, scale(ratio, base_edge)) if custom else scale(ratio, base_edge)
+        parse_dimensions(custom_size, scale(ratio, base_edge))
+        if custom
+        else scale(ratio, base_edge)
     )
     return SizeSpec(width, height, f"{width}x{height}")

@@ -3,6 +3,7 @@
 
 全程离线（只连 127.0.0.1），直接 python tests/test_providers.py 运行。
 """
+
 import asyncio
 import base64
 import json
@@ -62,15 +63,23 @@ async def case_openai_b64():
     runner, base = await start(app)
     try:
         profile = ProviderProfile(
-            kind="openai", api_key="sk-secret", base_url=base + "/v1", model="gpt-image-1"
+            kind="openai",
+            api_key="sk-secret",
+            base_url=base + "/v1",
+            model="gpt-image-1",
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="一只猫", negative="", n=1, ratio="1:1")
+            results = await provider.generate(
+                session, prompt="一只猫", negative="", n=1, ratio="1:1"
+            )
         check(len(results) == 1 and results[0].content == PNG, "b64 响应解析为图片字节")
         check(captured["payload"]["size"] == "1024x1024", "默认 1:1 尺寸")
         check(captured["payload"]["model"] == "gpt-image-1", "模型名透传")
-        check("response_format" not in captured["payload"], "gpt-image 不发送 response_format")
+        check(
+            "response_format" not in captured["payload"],
+            "gpt-image 不发送 response_format",
+        )
         check(captured["auth"] == "Bearer sk-secret", "Authorization 头正确")
     finally:
         await runner.cleanup()
@@ -93,13 +102,23 @@ async def case_openai_url():
     runner, base = await start(app)
     try:
         profile = ProviderProfile(
-            kind="openai", api_key="sk-secret", base_url=base + "/v1", model="flux.1-schnell"
+            kind="openai",
+            api_key="sk-secret",
+            base_url=base + "/v1",
+            model="flux.1-schnell",
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="16:9")
-        check(len(results) == 1 and results[0].content == PNG, "URL 结果被下载为图片字节")
-        check(captured["payload"]["response_format"] == "url", "auto 模式优先请求 url（JSON 小、抗截断）")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="16:9"
+            )
+        check(
+            len(results) == 1 and results[0].content == PNG, "URL 结果被下载为图片字节"
+        )
+        check(
+            captured["payload"]["response_format"] == "url",
+            "auto 模式优先请求 url（JSON 小、抗截断）",
+        )
         check(captured["payload"]["size"] == "1792x1024", "16:9 映射到通用尺寸表")
     finally:
         await runner.cleanup()
@@ -126,9 +145,13 @@ async def case_openai_retry():
             profile, request_timeout=10, max_retries=2, backoff=0.01
         )
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=3, ratio="1:1")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=3, ratio="1:1"
+            )
         check(state["calls"] == 2, f"5xx 后重试一次（实际 {state['calls']} 次）")
-        check(len(results) == 1 and results[0].content == PNG, "dall-e-3 强制 n=1 并成功")
+        check(
+            len(results) == 1 and results[0].content == PNG, "dall-e-3 强制 n=1 并成功"
+        )
     finally:
         await runner.cleanup()
 
@@ -148,21 +171,29 @@ async def case_openai_auth_error():
     runner, base = await start(app)
     try:
         profile = ProviderProfile(
-            kind="openai", api_key="sk-secret", base_url=base + "/v1", model="gpt-image-1"
+            kind="openai",
+            api_key="sk-secret",
+            base_url=base + "/v1",
+            model="gpt-image-1",
         )
         provider = OpenAICompatProvider(
             profile, request_timeout=10, max_retries=2, backoff=0.01
         )
         async with aiohttp.ClientSession() as session:
             try:
-                await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+                await provider.generate(
+                    session, prompt="cat", negative="", n=1, ratio="1:1"
+                )
                 raised = None
             except ProviderError as exc:
                 raised = exc
         check(raised is not None and raised.status == 401, "401 抛出 ProviderError")
         check(raised is not None and not raised.retryable, "401 不重试")
         check(state["calls"] == 1, "鉴权失败只请求一次（不重复计费）")
-        check("sk-secret" not in (raised.message if raised else ""), "错误信息中密钥被打码")
+        check(
+            "sk-secret" not in (raised.message if raised else ""),
+            "错误信息中密钥被打码",
+        )
     finally:
         await runner.cleanup()
 
@@ -203,7 +234,9 @@ async def case_gemini():
         )
 
     app = web.Application()
-    app.router.add_post("/v1beta/models/gemini-2.5-flash-image:generateContent", handler)
+    app.router.add_post(
+        "/v1beta/models/gemini-2.5-flash-image:generateContent", handler
+    )
     runner, base = await start(app)
     try:
         profile = ProviderProfile(
@@ -214,14 +247,19 @@ async def case_gemini():
         )
         provider = GeminiProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="16:9")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="16:9"
+            )
         check(len(results) == 1 and results[0].content == PNG, "inlineData 解析为图片")
         check(len(bodies) == 2, "不支持 imageConfig 时自动降级重试")
         check(
             bodies[0]["generationConfig"]["imageConfig"]["aspectRatio"] == "16:9",
             "首次请求携带比例",
         )
-        check("imageConfig" not in bodies[1]["generationConfig"], "降级请求去掉 imageConfig")
+        check(
+            "imageConfig" not in bodies[1]["generationConfig"],
+            "降级请求去掉 imageConfig",
+        )
     finally:
         await runner.cleanup()
 
@@ -261,7 +299,10 @@ async def case_dashscope():
     runner, base = await start(app)
     try:
         profile = ProviderProfile(
-            kind="dashscope", api_key="d-key", base_url=base + "/api/v1", model="qwen-image-plus"
+            kind="dashscope",
+            api_key="d-key",
+            base_url=base + "/api/v1",
+            model="qwen-image-plus",
         )
         provider = DashScopeProvider(profile, request_timeout=10, max_retries=0)
         provider.poll_interval = 0.01
@@ -271,8 +312,14 @@ async def case_dashscope():
             )
         check(len(results) == 1 and results[0].content == PNG, "轮询拿到结果图")
         check(captured["async_header"] == "enable", "异步任务头正确")
-        check(captured["payload"]["parameters"]["size"] == "1024*1024", "尺寸使用 宽*高 格式")
-        check(captured["payload"]["input"]["negative_prompt"] == "模糊", "negative_prompt 透传")
+        check(
+            captured["payload"]["parameters"]["size"] == "1024*1024",
+            "尺寸使用 宽*高 格式",
+        )
+        check(
+            captured["payload"]["input"]["negative_prompt"] == "模糊",
+            "negative_prompt 透传",
+        )
         check(state["polls"] >= 2, "至少轮询两次直到成功")
     finally:
         await runner.cleanup()
@@ -282,11 +329,19 @@ async def case_dashscope_failed():
     print("== DashScope 任务失败 ==")
 
     async def create(request):
-        return web.json_response({"output": {"task_id": "task-2", "task_status": "PENDING"}})
+        return web.json_response(
+            {"output": {"task_id": "task-2", "task_status": "PENDING"}}
+        )
 
     async def task(request):
         return web.json_response(
-            {"output": {"task_status": "FAILED", "code": "DataInspectionFailed", "message": "内容不合规"}}
+            {
+                "output": {
+                    "task_status": "FAILED",
+                    "code": "DataInspectionFailed",
+                    "message": "内容不合规",
+                }
+            }
         )
 
     app = web.Application()
@@ -295,18 +350,28 @@ async def case_dashscope_failed():
     runner, base = await start(app)
     try:
         profile = ProviderProfile(
-            kind="dashscope", api_key="d-key", base_url=base + "/api/v1", model="qwen-image-plus"
+            kind="dashscope",
+            api_key="d-key",
+            base_url=base + "/api/v1",
+            model="qwen-image-plus",
         )
         provider = DashScopeProvider(profile, request_timeout=10, max_retries=0)
         provider.poll_interval = 0.01
         async with aiohttp.ClientSession() as session:
             try:
-                await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+                await provider.generate(
+                    session, prompt="cat", negative="", n=1, ratio="1:1"
+                )
                 raised = None
             except ProviderError as exc:
                 raised = exc
-        check(raised is not None and "失败" in raised.message, "任务失败转为 ProviderError")
-        check(raised is not None and "内容不合规" in raised.message, "保留服务商失败原因")
+        check(
+            raised is not None and "失败" in raised.message,
+            "任务失败转为 ProviderError",
+        )
+        check(
+            raised is not None and "内容不合规" in raised.message, "保留服务商失败原因"
+        )
     finally:
         await runner.cleanup()
 
@@ -327,11 +392,16 @@ async def case_empty_response():
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
             try:
-                await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+                await provider.generate(
+                    session, prompt="cat", negative="", n=1, ratio="1:1"
+                )
                 raised = None
             except ProviderError as exc:
                 raised = exc
-        check(raised is not None and "没有图片数据" in raised.message, "空 data 被识别为失败")
+        check(
+            raised is not None and "没有图片数据" in raised.message,
+            "空 data 被识别为失败",
+        )
     finally:
         await runner.cleanup()
 
@@ -359,7 +429,9 @@ async def case_openai_strip_params():
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="1:1"
+            )
         check(len(bodies) == 2, "参数不支持时自动重试一次")
         check("response_format" not in bodies[1], "重试请求去掉了 response_format")
         check(len(results) == 1 and results[0].content == PNG, "降级后成功出图")
@@ -387,8 +459,13 @@ async def case_bom_nul():
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
-        check(len(results) == 1 and results[0].content == PNG, "带 BOM 与尾部 NUL 的 JSON 可正常解析")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="1:1"
+            )
+        check(
+            len(results) == 1 and results[0].content == PNG,
+            "带 BOM 与尾部 NUL 的 JSON 可正常解析",
+        )
     finally:
         await runner.cleanup()
 
@@ -413,7 +490,9 @@ async def case_truncated_salvage():
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=2, ratio="1:1")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=2, ratio="1:1"
+            )
         check(len(results) == 1, "从截断 JSON 中抢救出 1 张完整图片")
         check(results[0].content == PNG, "抢救出的图片字节正确")
     finally:
@@ -441,12 +520,17 @@ async def case_truncated_retry():
         )
         async with aiohttp.ClientSession() as session:
             try:
-                await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+                await provider.generate(
+                    session, prompt="cat", negative="", n=1, ratio="1:1"
+                )
                 raised = None
             except ProviderError as exc:
                 raised = exc
         check(state["calls"] == 2, f"截断响应触发一次重试（实际 {state['calls']} 次）")
-        check(raised is not None and "不是合法 JSON" in raised.message, "最终报错说明 JSON 非法")
+        check(
+            raised is not None and "不是合法 JSON" in raised.message,
+            "最终报错说明 JSON 非法",
+        )
         check(raised is not None and "截断" in raised.message, "报错提示响应被截断")
     finally:
         await runner.cleanup()
@@ -474,7 +558,9 @@ async def case_openai_format_fallback():
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="1:1"
+            )
         check(formats == ["url", "b64"], f"url 截断后自动改用 b64（实际 {formats}）")
         check(len(results) == 1 and results[0].content == PNG, "回退 b64 后成功出图")
     finally:
@@ -498,8 +584,12 @@ async def case_truncated_prefix_salvage():
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
-        check(len(results) == 1 and results[0].content == PNG, "从截断响应中恢复完整图片")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="1:1"
+            )
+        check(
+            len(results) == 1 and results[0].content == PNG, "从截断响应中恢复完整图片"
+        )
     finally:
         await runner.cleanup()
 
@@ -523,8 +613,13 @@ async def case_truncated_png_without_iend():
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
-        check(len(results) == 1 and results[0].content == png_cut, "缺 IEND 但 chunk 完整的 PNG 被恢复")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="1:1"
+            )
+        check(
+            len(results) == 1 and results[0].content == png_cut,
+            "缺 IEND 但 chunk 完整的 PNG 被恢复",
+        )
     finally:
         await runner.cleanup()
 
@@ -547,9 +642,13 @@ async def case_large_b64_body():
         )
         provider = OpenAICompatProvider(profile, request_timeout=20, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="1:1"
+            )
         check(len(results) == 1, "大响应完整解析出 1 张图")
-        check(results[0].content == big_png, f"响应体读满（{len(big_png)} 字节未丢数据）")
+        check(
+            results[0].content == big_png, f"响应体读满（{len(big_png)} 字节未丢数据）"
+        )
     finally:
         await runner.cleanup()
 
@@ -557,13 +656,15 @@ async def case_large_b64_body():
 async def case_chunked_large_body():
     print("== chunked 大响应也必须读满 ==")
     big_png = b"\x89PNG\r\n\x1a\n" + os.urandom(400 * 1024)
-    body = json.dumps({"data": [{"b64_json": base64.b64encode(big_png).decode()}]}).encode()
+    body = json.dumps(
+        {"data": [{"b64_json": base64.b64encode(big_png).decode()}]}
+    ).encode()
 
     async def handler(request):
         resp = web.StreamResponse(headers={"Content-Type": "application/json"})
         await resp.prepare(request)
         for i in range(0, len(body), 32 * 1024):
-            await resp.write(body[i:i + 32 * 1024])
+            await resp.write(body[i : i + 32 * 1024])
         await resp.write_eof()
         return resp
 
@@ -576,8 +677,13 @@ async def case_chunked_large_body():
         )
         provider = OpenAICompatProvider(profile, request_timeout=20, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
-        check(len(results) == 1 and results[0].content == big_png, "无 Content-Length 的 chunked 大响应读满")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="1:1"
+            )
+        check(
+            len(results) == 1 and results[0].content == big_png,
+            "无 Content-Length 的 chunked 大响应读满",
+        )
     finally:
         await runner.cleanup()
 
@@ -604,14 +710,23 @@ async def case_early_close_detected():
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
             try:
-                await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+                await provider.generate(
+                    session, prompt="cat", negative="", n=1, ratio="1:1"
+                )
                 raised = None
             except ProviderError as exc:
                 raised = exc
         check(raised is not None, "提前断开的响应会报错而不是返回半张图")
-        check(raised is not None and "连接提前结束" in raised.message, "错误说明连接提前结束")
-        check(raised is not None and "收到" in raised.message and "2269382" in raised.message,
-              "错误带收到/声明字节数")
+        check(
+            raised is not None and "连接提前结束" in raised.message,
+            "错误说明连接提前结束",
+        )
+        check(
+            raised is not None
+            and "收到" in raised.message
+            and "2269382" in raised.message,
+            "错误带收到/声明字节数",
+        )
         check(raised is not None and raised.retryable, "该错误标记为可重试")
     finally:
         await runner.cleanup()
@@ -637,7 +752,9 @@ async def case_download_large_image():
         )
         provider = OpenAICompatProvider(profile, request_timeout=20, max_retries=0)
         async with aiohttp.ClientSession() as session:
-            results = await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+            results = await provider.generate(
+                session, prompt="cat", negative="", n=1, ratio="1:1"
+            )
         check(len(results) == 1, "URL 模式出图成功")
         check(results[0].content == big_png, f"下载读满（{len(big_png)} 字节未丢数据）")
     finally:
@@ -651,7 +768,8 @@ async def case_error_body_truncated():
     async def handler(request):
         state["calls"] += 1
         resp = web.StreamResponse(
-            status=400, headers={"Content-Type": "application/json", "Content-Length": "1000"}
+            status=400,
+            headers={"Content-Type": "application/json", "Content-Length": "1000"},
         )
         await resp.prepare(request)
         await resp.write(b'{"error":{"message":"bad request"')
@@ -665,15 +783,22 @@ async def case_error_body_truncated():
         profile = ProviderProfile(
             kind="openai", api_key="k", base_url=base + "/v1", model="gpt-image-1"
         )
-        provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=2, backoff=0.01)
+        provider = OpenAICompatProvider(
+            profile, request_timeout=10, max_retries=2, backoff=0.01
+        )
         async with aiohttp.ClientSession() as session:
             try:
-                await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+                await provider.generate(
+                    session, prompt="cat", negative="", n=1, ratio="1:1"
+                )
                 raised = None
             except ProviderError as exc:
                 raised = exc
         check(raised is not None and raised.status == 400, "保留 HTTP 400 状态")
-        check(raised is not None and "HTTP 400" in raised.message, "错误信息以 HTTP 状态为主")
+        check(
+            raised is not None and "HTTP 400" in raised.message,
+            "错误信息以 HTTP 状态为主",
+        )
         check(state["calls"] == 1, "4xx 截断不重试")
     finally:
         await runner.cleanup()
@@ -700,7 +825,10 @@ async def case_openai_edit():
     runner, base = await start(app)
     try:
         profile = ProviderProfile(
-            kind="openai", api_key="sk-secret", base_url=base + "/v1", model="gpt-image-1"
+            kind="openai",
+            api_key="sk-secret",
+            base_url=base + "/v1",
+            model="gpt-image-1",
         )
         provider = OpenAICompatProvider(profile, request_timeout=10, max_retries=0)
         async with aiohttp.ClientSession() as session:
@@ -712,11 +840,16 @@ async def case_openai_edit():
                 ratio="1:1",
                 image=ReferenceImage(ref_bytes, "image/png", "ref.png"),
             )
-        check(len(results) == 1 and results[0].content == PNG, "edits 响应解析为图片字节")
+        check(
+            len(results) == 1 and results[0].content == PNG, "edits 响应解析为图片字节"
+        )
         check(captured["model"] == "gpt-image-1", "edits 透传模型")
         check(captured["prompt"] == "改成水墨风", "edits 透传提示词")
         check(captured["image"] == ref_bytes, "edits 上传参考图字节")
-        check(captured["response_format"] is None, "gpt-image edits 不发送 response_format")
+        check(
+            captured["response_format"] is None,
+            "gpt-image edits 不发送 response_format",
+        )
         check(captured["size"] == "1024x1024", "edits 尺寸映射")
     finally:
         await runner.cleanup()
@@ -753,7 +886,9 @@ async def case_openai_edit_url():
                 image=ReferenceImage(PNG, "image/png", "ref.png"),
             )
         check(formats == ["url"], "非 gpt-image 的 edits 优先请求 url 格式")
-        check(len(results) == 1 and results[0].content == PNG, "edits 的 url 结果被下载")
+        check(
+            len(results) == 1 and results[0].content == PNG, "edits 的 url 结果被下载"
+        )
     finally:
         await runner.cleanup()
 
@@ -815,7 +950,9 @@ async def case_timeout_no_retry():
         )
         async with aiohttp.ClientSession() as session:
             try:
-                await provider.generate(session, prompt="cat", negative="", n=1, ratio="1:1")
+                await provider.generate(
+                    session, prompt="cat", negative="", n=1, ratio="1:1"
+                )
                 raised = None
             except ProviderError as exc:
                 raised = exc
@@ -844,7 +981,9 @@ def case_chain():
     chain = build_chain(settings)
     check([p.kind for p in chain] == ["openai", "mock"], "主服务 + 备用按顺序构建")
 
-    settings2 = RuntimeSettings.from_mapping({"provider": "openai", "api_key": "", "model": ""})
+    settings2 = RuntimeSettings.from_mapping(
+        {"provider": "openai", "api_key": "", "model": ""}
+    )
     check(build_chain(settings2) == [], "配置不完整时不构建任何服务商")
 
 

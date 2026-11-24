@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """测试引导：把 fake_astrbot 放进 sys.path，再放插件根目录。"""
+
 import os
 import sys
 

@@ -351,11 +351,21 @@ astrbot_plugin_imggen/
 - 生成的图片保存在插件数据目录，按保留策略自动删除；
 - API Key 不会出现在回复、日志或错误信息中。
 
-## 十一、许可
+## 十一、参考与致谢
+
+- 早期设计参考了 [shanliuling/dsh-image-gen](https://github.com/shanliuling/dsh-image-gen)（Apache-2.0）的多风格、多服务商思路；本项目为 AstrBot 插件形态的独立实现，未复制其代码。
+
+## 十二、许可
 
 [MIT](LICENSE)
 
 ## 更新记录
+
+### v1.3.4
+
+- `metadata.yaml` 补充 `astrbot_version: ">=4.16,<5"` 与 `support_platforms` 声明，符合插件市场元数据规范；
+- README 增加参考项目致谢；全仓库代码已用 `ruff format` 统一格式；
+- 离线测试维持 257 项（core 76 / providers 66 / harness 115），全部通过。
 
 ### v1.3.3
 

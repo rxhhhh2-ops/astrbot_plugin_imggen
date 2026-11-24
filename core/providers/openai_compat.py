@@ -8,13 +8,20 @@
 能绕开中转站/代理截断大 base64 响应的问题；失败或服务商不支持时再退回 b64。
 可用配置 ``openai_response_format`` 强制指定 auto/url/b64。
 """
+
 from __future__ import annotations
 
 import aiohttp
 
 from astrbot.api import logger
 
-from .base import ImageProvider, ImageResult, ProviderError, ReferenceImage, request_json
+from .base import (
+    ImageProvider,
+    ImageResult,
+    ProviderError,
+    ReferenceImage,
+    request_json,
+)
 
 
 class OpenAICompatProvider(ImageProvider):
@@ -99,7 +106,9 @@ class OpenAICompatProvider(ImageProvider):
                 raise
             return await post()
 
-    async def generate(self, session, *, prompt, negative, n, ratio) -> list[ImageResult]:
+    async def generate(
+        self, session, *, prompt, negative, n, ratio
+    ) -> list[ImageResult]:
         size = self.size_for(ratio)
         model_lower = self.model.lower()
         # dall-e-3 官方一次只允许 1 张
@@ -140,7 +149,9 @@ class OpenAICompatProvider(ImageProvider):
 
         raise last_error or ProviderError("生成失败（未知原因）", retryable=True)
 
-    async def _results_from_items(self, session, items, size, count) -> list[ImageResult]:
+    async def _results_from_items(
+        self, session, items, size, count
+    ) -> list[ImageResult]:
         """把响应条目转成图片结果，容忍部分条目失败。"""
         results: list[ImageResult] = []
         errors: list[ProviderError] = []
@@ -174,7 +185,11 @@ class OpenAICompatProvider(ImageProvider):
         )
         if send_format:
             form.add_field("response_format", fmt)
-        if keep_quality and self.quality and self.quality.lower() not in ("", "auto", "默认"):
+        if (
+            keep_quality
+            and self.quality
+            and self.quality.lower() not in ("", "auto", "默认")
+        ):
             form.add_field("quality", self.quality)
         form.add_field(
             "image",
@@ -278,7 +293,10 @@ class OpenAICompatProvider(ImageProvider):
             if isinstance(value, list):
                 items.extend(v for v in value if isinstance(v, dict))
             elif isinstance(value, dict):
-                if any(k in value for k in ("b64_json", "b64", "base64", "url", "image", "image_url")):
+                if any(
+                    k in value
+                    for k in ("b64_json", "b64", "base64", "url", "image", "image_url")
+                ):
                     items.append(value)
                 for sub_key in ("images", "data", "results", "artifacts"):
                     sub = value.get(sub_key)

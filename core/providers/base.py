@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """服务商公共层：错误类型、图片字节校验、带重试的 HTTP、下载限流。"""
+
 from __future__ import annotations
 
 import asyncio
@@ -28,7 +29,9 @@ _URL_SALVAGE_RE = re.compile(r'"url"\s*:\s*"(https?://[^"\\\s]+)"')
 class ProviderError(Exception):
     """服务商调用失败。``status`` 用于映射友好的用户提示。"""
 
-    def __init__(self, message: str, *, retryable: bool = False, status: int | None = None):
+    def __init__(
+        self, message: str, *, retryable: bool = False, status: int | None = None
+    ):
         super().__init__(message)
         self.message = message
         self.retryable = retryable
@@ -94,7 +97,11 @@ def decode_body(raw: bytes) -> str:
     部分中转站会在 JSON 前加 UTF-8 BOM 或在末尾补 NUL，
     直接 ``json.loads`` 会报“不是合法 JSON”。
     """
-    return raw.decode("utf-8-sig", errors="replace").replace("\ufeff", "").replace("\x00", "")
+    return (
+        raw.decode("utf-8-sig", errors="replace")
+        .replace("\ufeff", "")
+        .replace("\x00", "")
+    )
 
 
 def _salvage_items(text: str) -> list[dict]:
@@ -125,8 +132,8 @@ def _png_ok(data: bytes) -> bool:
     pos = 8
     saw_idat = False
     while pos + 8 <= len(data):
-        length = int.from_bytes(data[pos:pos + 4], "big")
-        ctype = data[pos + 4:pos + 8]
+        length = int.from_bytes(data[pos : pos + 4], "big")
+        ctype = data[pos + 4 : pos + 8]
         end = pos + 12 + length
         if length > len(data) or end > len(data):
             return False
@@ -174,7 +181,7 @@ def _salvage_prefix_image(text: str) -> dict | None:
     quote = text.find('"', colon + 1)
     if quote < 0:
         return None
-    payload = text[quote + 1:]
+    payload = text[quote + 1 :]
     end = payload.find('"')
     if end >= 0:
         payload = payload[:end]
@@ -218,7 +225,9 @@ def load_json_tolerant(
         return {}
 
     truncated = bool(
-        expected_length and received_length is not None and received_length < expected_length
+        expected_length
+        and received_length is not None
+        and received_length < expected_length
     )
 
     try:
@@ -226,7 +235,9 @@ def load_json_tolerant(
     except json.JSONDecodeError as exc:
         error_msg = f"{exc.msg}（位置 {exc.pos}）"
         # 报错位置贴着末尾，或字符串没闭合，多半是响应被截断
-        if exc.pos >= max(0, len(cleaned) - 8) or exc.msg.startswith("Unterminated string"):
+        if exc.pos >= max(0, len(cleaned) - 8) or exc.msg.startswith(
+            "Unterminated string"
+        ):
             truncated = True
 
         cut = cleaned.rfind("}")
@@ -249,7 +260,11 @@ def load_json_tolerant(
             return {"data": [prefix_item]}
 
         if truncated:
-            if expected_length and received_length is not None and received_length < expected_length:
+            if (
+                expected_length
+                and received_length is not None
+                and received_length < expected_length
+            ):
                 raise ProviderError(
                     "服务商响应不完整：连接提前结束（收到 "
                     f"{received_length} 字节 / 声明 {expected_length} 字节），"
@@ -410,7 +425,9 @@ async def request_json(
                     message = f"HTTP {resp.status}：{snippet}"
                     if retryable and attempt < retries:
                         raise _RetrySignal(message, resp.status)
-                    raise ProviderError(message, retryable=retryable, status=resp.status)
+                    raise ProviderError(
+                        message, retryable=retryable, status=resp.status
+                    )
 
                 try:
                     data = load_json_tolerant(
@@ -424,13 +441,16 @@ async def request_json(
 
                 # OpenAI 风格并列错误：{"error": {...}}
                 error = data.get("error")
-                if error and not any(k in data for k in ("data", "images", "candidates", "output")):
+                if error and not any(
+                    k in data for k in ("data", "images", "candidates", "output")
+                ):
                     if isinstance(error, dict):
                         detail = error.get("message") or error.get("code") or str(error)
                     else:
                         detail = str(error)
                     raise ProviderError(
-                        "服务商返回错误：" + _redact(clean_snippet(str(detail)), secret),
+                        "服务商返回错误："
+                        + _redact(clean_snippet(str(detail)), secret),
                         retryable=False,
                     )
                 return data
@@ -453,7 +473,7 @@ async def request_json(
             raise
 
         if attempt < retries:
-            delay = min(15.0, backoff * (2 ** attempt)) + random.uniform(0, 0.3)
+            delay = min(15.0, backoff * (2**attempt)) + random.uniform(0, 0.3)
             await asyncio.sleep(delay)
 
     raise last or ProviderError("请求失败（未知原因）", retryable=True)
@@ -482,7 +502,9 @@ async def download_image(
         raise ProviderError("不支持的图片地址协议", retryable=False)
 
     try:
-        async with session.get(url, timeout=timeout, allow_redirects=True, max_redirects=3) as resp:
+        async with session.get(
+            url, timeout=timeout, allow_redirects=True, max_redirects=3
+        ) as resp:
             if resp.status >= 400:
                 raise ProviderError(
                     f"下载图片失败：HTTP {resp.status}",
@@ -492,7 +514,8 @@ async def download_image(
             declared = _declared_length(resp)
             if declared is not None and declared > max_bytes:
                 raise ProviderError(
-                    f"图片超过体积上限（{max_bytes // (1024 * 1024)}MB）", retryable=False
+                    f"图片超过体积上限（{max_bytes // (1024 * 1024)}MB）",
+                    retryable=False,
                 )
             data = await _read_body_limited(
                 resp, max_bytes, what="图片", declared=declared
@@ -503,7 +526,9 @@ async def download_image(
                     retryable=True,
                 )
     except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
-        raise ProviderError(f"下载图片失败：{exc.__class__.__name__}", retryable=True) from None
+        raise ProviderError(
+            f"下载图片失败：{exc.__class__.__name__}", retryable=True
+        ) from None
 
     if not data:
         raise ProviderError("下载到空图片", retryable=True)
@@ -548,10 +573,17 @@ class ImageProvider:
 
     def size_for(self, ratio: str) -> SizeSpec:
         return resolve_size(
-            self.kind, self.model, ratio, self.size_mode, self.custom_size, self.base_edge
+            self.kind,
+            self.model,
+            ratio,
+            self.size_mode,
+            self.custom_size,
+            self.base_edge,
         )
 
-    async def _as_result(self, session: aiohttp.ClientSession, item: dict, size: SizeSpec) -> ImageResult:
+    async def _as_result(
+        self, session: aiohttp.ClientSession, item: dict, size: SizeSpec
+    ) -> ImageResult:
         """把服务商返回的一项（base64 或 URL）转成 ImageResult。"""
         content: bytes = b""
         url = str(item.get("url") or item.get("image_url") or "").strip()
@@ -563,7 +595,11 @@ class ImageProvider:
             or item.get("image")
             or ""
         )
-        if isinstance(b64, str) and b64.strip() and not b64.strip().lower().startswith("http"):
+        if (
+            isinstance(b64, str)
+            and b64.strip()
+            and not b64.strip().lower().startswith("http")
+        ):
             content = decode_base64(b64)
         elif url:
             content = await download_image(

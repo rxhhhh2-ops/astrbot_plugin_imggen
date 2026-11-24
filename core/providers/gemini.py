@@ -6,6 +6,7 @@ Gemini 原生接口没有 n / negative_prompt 参数：
 - 比例通过 ``generationConfig.imageConfig.aspectRatio`` 传递，
   个别模型不支持该字段时自动去掉再重试一次。
 """
+
 from __future__ import annotations
 
 from .base import ImageProvider, ImageResult, ProviderError, request_json
@@ -21,7 +22,9 @@ class GeminiProvider(ImageProvider):
             return base
         return f"{base}/models/{self.model}:generateContent"
 
-    async def generate(self, session, *, prompt, negative, n, ratio) -> list[ImageResult]:
+    async def generate(
+        self, session, *, prompt, negative, n, ratio
+    ) -> list[ImageResult]:
         size = self.size_for(ratio)
         want = max(1, int(n))
         results: list[ImageResult] = []
@@ -121,7 +124,8 @@ class GeminiProvider(ImageProvider):
                     items.append(
                         {
                             "b64_json": inline["data"],
-                            "mime_type": inline.get("mimeType") or inline.get("mime_type"),
+                            "mime_type": inline.get("mimeType")
+                            or inline.get("mime_type"),
                         }
                     )
                 elif isinstance(part.get("text"), str):

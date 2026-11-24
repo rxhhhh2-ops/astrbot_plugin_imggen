@@ -3,6 +3,7 @@
 
 不依赖 AstrBot 运行时，直接 python tests/test_core.py 运行。
 """
+
 import asyncio
 import json
 import os
@@ -44,7 +45,9 @@ def check(cond, msg):
 
 def test_styles():
     print("== 风格库 ==")
-    check(len(BUILTIN_STYLES) >= 30, f"内置风格不少于 30 种（实际 {len(BUILTIN_STYLES)}）")
+    check(
+        len(BUILTIN_STYLES) >= 30, f"内置风格不少于 30 种（实际 {len(BUILTIN_STYLES)}）"
+    )
     ids = [s.id for s in BUILTIN_STYLES]
     check(len(ids) == len(set(ids)), "风格 id 无重复")
 
@@ -53,10 +56,15 @@ def test_styles():
     check(book.resolve("水墨").id == "guofeng", "按别名解析水墨")
     check(book.resolve("anime").id == "anime", "按 id 解析 anime")
     check(book.resolve("二次元风格").id == "anime", "带“风格”后缀也能解析")
-    check(book.resolve("用赛博朋克画一只猫").id == "cyberpunk", "整句里包含风格名时可解析")
+    check(
+        book.resolve("用赛博朋克画一只猫").id == "cyberpunk", "整句里包含风格名时可解析"
+    )
     check(book.resolve_token("水墨画里的山") is None, "整词匹配不会误吞句子")
     check(book.detect("画一只像素风小猫").id == "pixel", "关键词识别像素风")
-    check(book.detect("帮我画个产品海报").id in ("poster", "product"), "关键词识别海报/产品")
+    check(
+        book.detect("帮我画个产品海报").id in ("poster", "product"),
+        "关键词识别海报/产品",
+    )
     check(book.detect("今天天气不错") is None, "无关键词时不强行匹配")
     check(book.get("不存在的风格").id == "general", "未知风格回退默认")
 
@@ -105,12 +113,17 @@ def test_prompt():
     book = StyleBook()
     style = book.get("guofeng")
     prompt, negative = build_prompt(style, "山间小筑", negative_as_hint=True)
-    check(style.prefix in prompt and "山间小筑" in prompt, "风格前缀与用户描述都进入提示词")
+    check(
+        style.prefix in prompt and "山间小筑" in prompt,
+        "风格前缀与用户描述都进入提示词",
+    )
     check("避免出现" in prompt and negative, "负面词以“避免出现”追加")
     prompt2, _ = build_prompt(style, "山间小筑", negative_as_hint=False)
     check("避免出现" not in prompt2, "关闭负面提示时不追加")
 
-    check(strip_prefixes("画一张 一只猫", ("画一张", "帮我画")) == "一只猫", "剥离触发词")
+    check(
+        strip_prefixes("画一张 一只猫", ("画一张", "帮我画")) == "一只猫", "剥离触发词"
+    )
     check(strip_command("/画 一只猫", ("画",)) == "一只猫", "剥离 /画 命令")
     check(strip_command("画一只猫", ("画",)) == "一只猫", "剥离连写命令")
     check(strip_command("绘画 一只猫", ("画", "绘画")) == "一只猫", "剥离别名命令")
@@ -133,7 +146,9 @@ def test_sizes():
     check(spec.value == "1024x1792", f"通用模型 9:16 → {spec.value}")
     spec = resolve_size("dashscope", "qwen-image-plus", "16:9")
     check(spec.value == "1280*720", f"dashscope 16:9 → {spec.value}")
-    spec = resolve_size("openai", "gpt-image-1", "1:1", size_mode="custom", custom_size="640x640")
+    spec = resolve_size(
+        "openai", "gpt-image-1", "1:1", size_mode="custom", custom_size="640x640"
+    )
     check(spec.value == "640x640", "自定义尺寸模式生效")
     spec = resolve_size("gemini", "gemini-2.5-flash-image", "3:4")
     check(spec.value == "3:4" and spec.width < spec.height, "gemini 用比例作为尺寸值")
@@ -145,7 +160,10 @@ def test_store():
     store = ImageStore(root, keep_days=0, max_files=50)
     png = render_placeholder(64, 64, "hello")
     path = store.save(png)
-    check(path.exists() and path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n", "PNG 落盘且魔数正确")
+    check(
+        path.exists() and path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n",
+        "PNG 落盘且魔数正确",
+    )
 
     try:
         store.save(b"<html>not an image</html>")
@@ -180,15 +198,23 @@ async def _limits_case():
     # Linux 容器刚启动时 monotonic 可能只有几十秒；首次请求不能被误判为冷却。
     with mock.patch("core.limits.time.monotonic", return_value=5.0):
         fresh = UsageLimiter(
-            cooldown_seconds=60, daily_limit=0, max_concurrency=1,
-            queue_timeout=0.2, max_queue=0,
+            cooldown_seconds=60,
+            daily_limit=0,
+            max_concurrency=1,
+            queue_timeout=0.2,
+            max_queue=0,
         )
         await fresh.acquire("fresh")
         fresh.release("fresh", success=False)
     check(True, "低 uptime 下首次请求不被误判冷却")
 
-    limiter = UsageLimiter(cooldown_seconds=60, daily_limit=0, max_concurrency=1,
-                           queue_timeout=0.2, max_queue=0)
+    limiter = UsageLimiter(
+        cooldown_seconds=60,
+        daily_limit=0,
+        max_concurrency=1,
+        queue_timeout=0.2,
+        max_queue=0,
+    )
     await limiter.acquire("u1")
     try:
         await limiter.acquire("u1")
@@ -210,8 +236,13 @@ async def _limits_case():
         check("排队" in exc.message or "较多" in exc.message, "队列满时快速拒绝")
     limiter.release("u2")
 
-    quota = UsageLimiter(cooldown_seconds=0, daily_limit=1, max_concurrency=2,
-                         queue_timeout=1, max_queue=2)
+    quota = UsageLimiter(
+        cooldown_seconds=0,
+        daily_limit=1,
+        max_concurrency=2,
+        queue_timeout=1,
+        max_queue=2,
+    )
     await quota.acquire("u4")
     quota.release("u4", success=True)
     try:
@@ -220,8 +251,13 @@ async def _limits_case():
     except LimitError as exc:
         check("额度" in exc.message, "每日额度用尽提示")
 
-    refund = UsageLimiter(cooldown_seconds=0, daily_limit=1, max_concurrency=2,
-                          queue_timeout=1, max_queue=2)
+    refund = UsageLimiter(
+        cooldown_seconds=0,
+        daily_limit=1,
+        max_concurrency=2,
+        queue_timeout=1,
+        max_queue=2,
+    )
     await refund.acquire("u5")
     refund.release("u5", success=False)
     await refund.acquire("u5")  # 失败应退回额度
@@ -231,16 +267,24 @@ async def _limits_case():
     print("== 额度持久化 ==")
     state_path = os.path.join(tempfile.mkdtemp(prefix="imggen_usage_"), "usage.json")
     persist = UsageLimiter(
-        cooldown_seconds=60, daily_limit=5, max_concurrency=2,
-        queue_timeout=1, max_queue=2, state_path=state_path,
+        cooldown_seconds=60,
+        daily_limit=5,
+        max_concurrency=2,
+        queue_timeout=1,
+        max_queue=2,
+        state_path=state_path,
     )
     await persist.acquire("u6")
     persist.release("u6", success=True)
     check(os.path.isfile(state_path), "额度状态写入文件")
 
     reloaded = UsageLimiter(
-        cooldown_seconds=60, daily_limit=5, max_concurrency=2,
-        queue_timeout=1, max_queue=2, state_path=state_path,
+        cooldown_seconds=60,
+        daily_limit=5,
+        max_concurrency=2,
+        queue_timeout=1,
+        max_queue=2,
+        state_path=state_path,
     )
     check(reloaded.snapshot("u6")["user_today"] == 1, "重启后每日额度仍保留")
     try:
@@ -250,14 +294,22 @@ async def _limits_case():
         check("冷却" in exc.message, "重启后冷却仍生效")
 
     refund_persist = UsageLimiter(
-        cooldown_seconds=0, daily_limit=5, max_concurrency=2,
-        queue_timeout=1, max_queue=2, state_path=state_path,
+        cooldown_seconds=0,
+        daily_limit=5,
+        max_concurrency=2,
+        queue_timeout=1,
+        max_queue=2,
+        state_path=state_path,
     )
     await refund_persist.acquire("u7")
     refund_persist.release("u7", success=False)
     again = UsageLimiter(
-        cooldown_seconds=0, daily_limit=5, max_concurrency=2,
-        queue_timeout=1, max_queue=2, state_path=state_path,
+        cooldown_seconds=0,
+        daily_limit=5,
+        max_concurrency=2,
+        queue_timeout=1,
+        max_queue=2,
+        state_path=state_path,
     )
     check(
         "u7" not in again._daily or again._daily["u7"][1] == 0,
@@ -311,13 +363,26 @@ def test_config():
     check("画" not in settings.trigger_prefixes, "过宽的单个“画”前缀被丢弃")
     check(settings.allowed_images(99) == 10, "请求张数受上限约束")
 
-    check(RuntimeSettings.from_mapping({"openai_response_format": "URL"}).openai_response_format == "url",
-          "返回格式大小写归一化")
-    check(RuntimeSettings.from_mapping({"openai_response_format": "xxx"}).openai_response_format == "auto",
-          "非法返回格式回退 auto")
+    check(
+        RuntimeSettings.from_mapping(
+            {"openai_response_format": "URL"}
+        ).openai_response_format
+        == "url",
+        "返回格式大小写归一化",
+    )
+    check(
+        RuntimeSettings.from_mapping(
+            {"openai_response_format": "xxx"}
+        ).openai_response_format
+        == "auto",
+        "非法返回格式回退 auto",
+    )
 
     profile = ProviderProfile(kind="openai", api_key="k")
-    check(profile.resolved_base_url().startswith("https://api.openai.com"), "默认 base_url 补齐")
+    check(
+        profile.resolved_base_url().startswith("https://api.openai.com"),
+        "默认 base_url 补齐",
+    )
     check(profile.resolved_model() == "gpt-image-1", "默认模型补齐")
     check(profile.ready(), "有 key 即可用")
 

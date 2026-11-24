@@ -6,6 +6,7 @@
 - 数值统一做区间裁剪，避免 ``--n 999`` 之类的输入把服务打爆；
 - 密钥支持环境变量兜底，方便 Docker / 面板部署。
 """
+
 from __future__ import annotations
 
 import os
@@ -30,10 +31,23 @@ DEFAULT_MODELS = {
 
 # 自动触发前缀：刻意避开单个“画”字，防止把正常聊天当成命令
 DEFAULT_TRIGGER_PREFIXES = (
-    "画一张", "画一幅", "画个", "画一个", "画张", "画只",
-    "帮我画", "给我画", "帮我生成", "给我生成",
-    "生成一张", "生成一幅", "生成图片", "生成图", "生图",
-    "绘制一张", "绘制一个",
+    "画一张",
+    "画一幅",
+    "画个",
+    "画一个",
+    "画张",
+    "画只",
+    "帮我画",
+    "给我画",
+    "帮我生成",
+    "给我生成",
+    "生成一张",
+    "生成一幅",
+    "生成图片",
+    "生成图",
+    "生图",
+    "绘制一张",
+    "绘制一个",
 )
 
 _TRUE_WORDS = {"1", "true", "yes", "on", "y", "是", "开", "开启", "启用"}
@@ -80,7 +94,9 @@ def as_int(value, default: int, lo: int | None = None, hi: int | None = None) ->
     return number
 
 
-def as_float(value, default: float, lo: float | None = None, hi: float | None = None) -> float:
+def as_float(
+    value, default: float, lo: float | None = None, hi: float | None = None
+) -> float:
     try:
         number = float(str(value).strip())
     except (TypeError, ValueError):
@@ -193,9 +209,12 @@ class RuntimeSettings:
     def from_mapping(cls, config) -> "RuntimeSettings":
         primary = ProviderProfile(
             kind=_norm_kind(_get(config, "provider", "openai")),
-            api_key=as_str(_get(config, "api_key", "")) or as_str(os.environ.get("IMGGEN_API_KEY", "")),
-            base_url=as_str(_get(config, "base_url", "")) or as_str(os.environ.get("IMGGEN_BASE_URL", "")),
-            model=as_str(_get(config, "model", "")) or as_str(os.environ.get("IMGGEN_MODEL", "")),
+            api_key=as_str(_get(config, "api_key", ""))
+            or as_str(os.environ.get("IMGGEN_API_KEY", "")),
+            base_url=as_str(_get(config, "base_url", ""))
+            or as_str(os.environ.get("IMGGEN_BASE_URL", "")),
+            model=as_str(_get(config, "model", ""))
+            or as_str(os.environ.get("IMGGEN_MODEL", "")),
             quality=as_str(_get(config, "quality", "auto")) or "auto",
         )
 
@@ -213,14 +232,20 @@ class RuntimeSettings:
                 quality="auto",
             )
             # 与主服务完全相同的连接再挂一份没有意义
-            if candidate.kind != primary.kind or candidate.resolved_base_url() != primary.resolved_base_url():
+            if (
+                candidate.kind != primary.kind
+                or candidate.resolved_base_url() != primary.resolved_base_url()
+            ):
                 backup = candidate
 
         response_format = as_str(_get(config, "openai_response_format", "auto")).lower()
         if response_format not in ("auto", "url", "b64"):
             response_format = "auto"
 
-        prefixes = tuple(as_list(_get(config, "trigger_prefixes", ""))) or DEFAULT_TRIGGER_PREFIXES
+        prefixes = (
+            tuple(as_list(_get(config, "trigger_prefixes", "")))
+            or DEFAULT_TRIGGER_PREFIXES
+        )
         prefixes = tuple(p for p in prefixes if p and p != "画")
 
         return cls(
@@ -229,12 +254,16 @@ class RuntimeSettings:
             fallback_on_error=as_bool(_get(config, "fallback_on_error", True), True),
             default_style=as_str(_get(config, "default_style", "general")) or "general",
             default_ratio=as_str(_get(config, "default_ratio", "1:1")) or "1:1",
-            size_mode="custom" if as_str(_get(config, "size_mode", "auto")).lower() == "custom" else "auto",
+            size_mode="custom"
+            if as_str(_get(config, "size_mode", "auto")).lower() == "custom"
+            else "auto",
             custom_size=as_str(_get(config, "custom_size", "1024x1024")) or "1024x1024",
             openai_response_format=response_format,
             default_images=as_int(_get(config, "default_images", 1), 1, 1, 4),
             max_images=as_int(_get(config, "max_images", 4), 4, 1, 10),
-            max_prompt_chars=as_int(_get(config, "max_prompt_chars", 800), 800, 50, 4000),
+            max_prompt_chars=as_int(
+                _get(config, "max_prompt_chars", 800), 800, 50, 4000
+            ),
             negative_as_hint=as_bool(_get(config, "negative_as_hint", True), True),
             auto_trigger=as_bool(_get(config, "auto_trigger", True), True),
             trigger_prefixes=prefixes,
@@ -242,14 +271,22 @@ class RuntimeSettings:
             allow_private=as_bool(_get(config, "allow_private", True), True),
             admin_only=as_bool(_get(config, "admin_only", False), False),
             blocked_words=tuple(as_list(_get(config, "blocked_words", ""))),
-            cooldown_seconds=as_float(_get(config, "cooldown_seconds", 15), 15.0, 0.0, 86400.0),
+            cooldown_seconds=as_float(
+                _get(config, "cooldown_seconds", 15), 15.0, 0.0, 86400.0
+            ),
             daily_limit=as_int(_get(config, "daily_limit", 30), 30, 0, 100000),
             max_concurrency=as_int(_get(config, "max_concurrency", 2), 2, 1, 16),
-            queue_timeout=as_float(_get(config, "queue_timeout", 120), 120.0, 5.0, 3600.0),
+            queue_timeout=as_float(
+                _get(config, "queue_timeout", 120), 120.0, 5.0, 3600.0
+            ),
             max_queue=as_int(_get(config, "max_queue", 8), 8, 0, 200),
-            request_timeout=as_float(_get(config, "request_timeout", 180), 180.0, 5.0, 1800.0),
+            request_timeout=as_float(
+                _get(config, "request_timeout", 180), 180.0, 5.0, 1800.0
+            ),
             max_retries=as_int(_get(config, "max_retries", 2), 2, 0, 5),
-            max_download_bytes=as_int(_get(config, "max_download_mb", 20), 20, 1, 200) * 1024 * 1024,
+            max_download_bytes=as_int(_get(config, "max_download_mb", 20), 20, 1, 200)
+            * 1024
+            * 1024,
             show_progress=as_bool(_get(config, "show_progress", True), True),
             show_caption=as_bool(_get(config, "show_caption", True), True),
             show_prompt=as_bool(_get(config, "show_prompt", False), False),

@@ -4,6 +4,7 @@
 优先用 Pillow 画一张带文字的渐变图；Pillow 不可用时退回纯标准库
 （zlib + struct）生成渐变 PNG，保证任何环境都有输出。
 """
+
 from __future__ import annotations
 
 import struct
@@ -24,9 +25,7 @@ def _png_gradient(width: int, height: int, top: tuple, bottom: tuple) -> bytes:
     denom = max(1, height - 1)
     for y in range(height):
         t = y / denom
-        rgb = bytes(
-            int(top[i] + (bottom[i] - top[i]) * t) for i in range(3)
-        )
+        rgb = bytes(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3))
         rows.append(0)  # filter type 0
         rows.extend(rgb * width)
 
@@ -99,7 +98,9 @@ class MockProvider(ImageProvider):
     supports_negative = False
     supports_edit = True
 
-    async def generate(self, session, *, prompt, negative, n, ratio) -> list[ImageResult]:
+    async def generate(
+        self, session, *, prompt, negative, n, ratio
+    ) -> list[ImageResult]:
         size = self.size_for(ratio)
         results: list[ImageResult] = []
         for index in range(max(1, int(n))):
@@ -116,7 +117,9 @@ class MockProvider(ImageProvider):
             )
         return results
 
-    async def edit(self, session, *, prompt, negative, n, ratio, image) -> list[ImageResult]:
+    async def edit(
+        self, session, *, prompt, negative, n, ratio, image
+    ) -> list[ImageResult]:
         """离线模式：原样返回参考图，便于验证图生图链路。"""
         size = self.size_for(ratio)
         results: list[ImageResult] = []

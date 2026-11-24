@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """服务商熔断器：连续失败后短暂跳过该线路，避免每次都等满超时。"""
+
 from __future__ import annotations
 
 import time

@@ -9,6 +9,7 @@
      "override": {"guofeng": {"prefix": "..."}},
      "disable": ["ukiyoe"]}
 """
+
 from __future__ import annotations
 
 import json
@@ -37,14 +38,18 @@ _BASE_NEG = "低清晰度，模糊，畸形，多余肢体，水印，签名，�
 
 BUILTIN_STYLES: tuple[Style, ...] = (
     Style(
-        id="general", name="通用插画", category="通用",
+        id="general",
+        name="通用插画",
+        category="通用",
         summary="万金油：构图完整、光影自然的通用插画",
         prefix="高质量插画，构图完整，主体明确，光影自然，细节丰富",
         suffix="整体风格统一，画面干净",
         negative=_BASE_NEG,
     ),
     Style(
-        id="anime", name="二次元", category="二次元",
+        id="anime",
+        name="二次元",
+        category="二次元",
         summary="日系赛璐璐动画质感",
         prefix="日系二次元插画，精致线稿，赛璐璐上色，干净通透的色彩",
         suffix="流行动画质感，人物比例准确",
@@ -52,7 +57,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("动漫", "日系", "二次元插画"),
     ),
     Style(
-        id="chibi", name="Q版萌系", category="二次元",
+        id="chibi",
+        name="Q版萌系",
+        category="二次元",
         summary="大头小身、圆润可爱的 Q 版",
         prefix="Q版可爱卡通风格，大头小身比例，圆润造型，明亮柔和的配色",
         suffix="萌系表情，简洁背景",
@@ -61,7 +68,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("q版", "萌系", "可爱卡通风"),
     ),
     Style(
-        id="manga", name="黑白漫画", category="二次元",
+        id="manga",
+        name="黑白漫画",
+        category="二次元",
         summary="网点阴影与钢笔线条的漫画分镜",
         prefix="黑白漫画风格，网点阴影，强烈的明暗对比，干净的钢笔线条",
         suffix="分镜感构图，纸质纹理",
@@ -70,7 +79,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("漫画", "黑白漫画风"),
     ),
     Style(
-        id="pixel", name="像素风", category="风格化",
+        id="pixel",
+        name="像素风",
+        category="风格化",
         summary="16-bit 复古游戏像素画面",
         prefix="像素艺术风格，16-bit 复古游戏画面，清晰的像素颗粒，有限色板",
         suffix="复古游戏质感",
@@ -79,7 +90,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("像素", "像素画", "像素风"),
     ),
     Style(
-        id="guofeng", name="国风水墨", category="国风",
+        id="guofeng",
+        name="国风水墨",
+        category="国风",
         summary="宣纸留白、墨色浓淡的写意水墨",
         prefix="中国水墨画风格，宣纸质感，留白意境，墨色浓淡变化自然",
         suffix="淡雅设色，传统题跋布局，气韵生动",
@@ -88,7 +101,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("水墨", "国风", "水墨画", "写意"),
     ),
     Style(
-        id="guochao", name="国潮插画", category="国风",
+        id="guochao",
+        name="国潮插画",
+        category="国风",
         summary="传统纹样 + 现代平面设计",
         prefix="国潮插画风格，传统纹样与现代平面设计结合，红金配色，对称构图",
         suffix="潮流感强，画面有张力",
@@ -97,7 +112,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("国潮", "新中式"),
     ),
     Style(
-        id="ukiyoe", name="浮世绘", category="国风",
+        id="ukiyoe",
+        name="浮世绘",
+        category="国风",
         summary="木版画平涂与日式古典构图",
         prefix="浮世绘风格，木版画质感，平涂色块，清晰的轮廓线，传统日式构图",
         suffix="古典雅致，色调温润",
@@ -106,7 +123,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("浮世绘风格",),
     ),
     Style(
-        id="photoreal", name="写实摄影", category="摄影",
+        id="photoreal",
+        name="写实摄影",
+        category="摄影",
         summary="超写实、真实光影的照片感",
         prefix="超写实摄影，真实自然的光影，高细节质感，35mm 镜头，自然景深",
         suffix="照片级真实感",
@@ -115,7 +134,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("写实", "摄影", "真实照片", "电影感"),
     ),
     Style(
-        id="portrait", name="人像写真", category="摄影",
+        id="portrait",
+        name="人像写真",
+        category="摄影",
         summary="柔和布光的写实人像",
         prefix="写实人像摄影，柔和布光，浅景深，真实皮肤质感，自然表情",
         suffix="影棚级质感",
@@ -124,7 +145,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("人像", "写真", "半身像"),
     ),
     Style(
-        id="food", name="美食摄影", category="摄影",
+        id="food",
+        name="美食摄影",
+        category="摄影",
         summary="暖光浅景深的诱人美食照",
         prefix="美食摄影，暖色光线，浅景深，诱人的食物质感，精致摆盘",
         suffix="杂志级美食大片",
@@ -133,7 +156,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("美食", "菜品摄影", "食物"),
     ),
     Style(
-        id="product", name="产品图", category="摄影",
+        id="product",
+        name="产品图",
+        category="摄影",
         summary="干净背景的电商产品棚拍",
         prefix="产品商业摄影，干净简洁的背景，柔和反光，高级材质质感，棚拍布光",
         suffix="电商主图风格，主体突出",
@@ -142,7 +167,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("产品", "商品图", "电商图"),
     ),
     Style(
-        id="oil", name="油画", category="绘画",
+        id="oil",
+        name="油画",
+        category="绘画",
         summary="厚涂笔触与画布肌理",
         prefix="古典油画风格，厚涂笔触，丰富的色彩层次，可见的画布纹理",
         suffix="光影层次厚重，质感饱满",
@@ -151,7 +178,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("油画风", "厚涂"),
     ),
     Style(
-        id="watercolor", name="水彩", category="绘画",
+        id="watercolor",
+        name="水彩",
+        category="绘画",
         summary="透明叠色、湿画法晕染",
         prefix="水彩画风格，透明叠色，湿画法晕染，自然的水痕，清晰的纸张纹理",
         suffix="轻盈通透",
@@ -159,7 +188,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("水彩画", "水彩风"),
     ),
     Style(
-        id="sketch", name="素描线稿", category="绘画",
+        id="sketch",
+        name="素描线稿",
+        category="绘画",
         summary="铅笔排线与黑白线稿",
         prefix="铅笔素描风格，黑白线稿，细腻的明暗排线，纸张颗粒质感",
         suffix="手绘草稿感",
@@ -167,7 +198,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("素描", "线稿", "速写", "铅笔稿"),
     ),
     Style(
-        id="children", name="儿童画", category="绘画",
+        id="children",
+        name="儿童画",
+        category="绘画",
         summary="稚拙可爱的儿童蜡笔/水彩",
         prefix="儿童绘本风格，稚拙温暖的手绘笔触，明亮柔和的色彩，简单可爱的造型",
         suffix="童趣自然",
@@ -175,7 +208,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("儿童插画", "童趣"),
     ),
     Style(
-        id="cyberpunk", name="赛博朋克", category="风格化",
+        id="cyberpunk",
+        name="赛博朋克",
+        category="风格化",
         summary="霓虹雨夜与未来科技感",
         prefix="赛博朋克风格，霓虹灯光，雨夜城市，高对比色彩，未来科技感",
         suffix="电影级光影，体积雾",
@@ -184,7 +219,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("赛博", "赛博朋克风"),
     ),
     Style(
-        id="vaporwave", name="蒸汽波", category="风格化",
+        id="vaporwave",
+        name="蒸汽波",
+        category="风格化",
         summary="粉紫渐变与复古电脑元素",
         prefix="蒸汽波风格，粉紫渐变，复古电脑界面元素，网格地平线，梦幻光晕",
         suffix="80 年代复古未来感",
@@ -193,7 +230,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("蒸汽波风格",),
     ),
     Style(
-        id="neon", name="霓虹灯管", category="风格化",
+        id="neon",
+        name="霓虹灯管",
+        category="风格化",
         summary="深色背景上的发光线条",
         prefix="霓虹灯管艺术风格，发光线条，深色背景，强烈的色彩对比，柔和光晕",
         suffix="夜景氛围",
@@ -202,7 +241,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("霓虹",),
     ),
     Style(
-        id="steampunk", name="蒸汽朋克", category="风格化",
+        id="steampunk",
+        name="蒸汽朋克",
+        category="风格化",
         summary="黄铜齿轮与复古机械",
         prefix="蒸汽朋克风格，黄铜齿轮，复古机械结构，暖黄色调，做旧金属质感",
         suffix="维多利亚时代科幻感",
@@ -210,7 +251,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("蒸汽朋克风",),
     ),
     Style(
-        id="dark", name="暗黑奇幻", category="风格化",
+        id="dark",
+        name="暗黑奇幻",
+        category="风格化",
         summary="强烈明暗与神秘史诗氛围",
         prefix="暗黑奇幻风格，强烈的明暗对比，神秘氛围，史诗级构图，冷暖对撞的光色",
         suffix="电影海报质感",
@@ -219,7 +262,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("暗黑", "暗黑风"),
     ),
     Style(
-        id="storybook", name="绘本童话", category="插画",
+        id="storybook",
+        name="绘本童话",
+        category="插画",
         summary="温暖手绘的童话绘本",
         prefix="儿童绘本插画，温暖的手绘质感，柔和梦幻的配色，童话氛围",
         suffix="治愈系画面",
@@ -227,7 +272,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("绘本", "童话"),
     ),
     Style(
-        id="flat", name="扁平插画", category="设计",
+        id="flat",
+        name="扁平插画",
+        category="设计",
         summary="几何色块的现代扁平风",
         prefix="扁平矢量插画，简洁的几何形状，纯色块，现代 UI 插画风格",
         suffix="配色克制，层次清晰",
@@ -235,7 +282,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("扁平风", "矢量插画"),
     ),
     Style(
-        id="minimal", name="极简", category="设计",
+        id="minimal",
+        name="极简",
+        category="设计",
         summary="大留白、单一主体",
         prefix="极简主义设计，大量留白，单一主体，柔和的渐变背景，克制的配色",
         suffix="高级感",
@@ -244,7 +293,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("极简风", "简约"),
     ),
     Style(
-        id="poster", name="海报设计", category="设计",
+        id="poster",
+        name="海报设计",
+        category="设计",
         summary="强主体 + 版式留白的平面海报",
         prefix="平面海报设计，强烈的视觉主体，大胆留白，现代版式，主标题排版",
         suffix="印刷级配色",
@@ -253,7 +304,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("海报", "宣传海报"),
     ),
     Style(
-        id="infographic", name="信息图", category="设计",
+        id="infographic",
+        name="信息图",
+        category="设计",
         summary="分区清晰的知识图/流程图",
         prefix="信息图设计，清晰的结构分区，图标与数据可视化，整洁的中文标注排版，阅读动线明确",
         suffix="教育科普风格",
@@ -262,7 +315,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("信息图设计", "知识图", "图解"),
     ),
     Style(
-        id="logo", name="标志图标", category="设计",
+        id="logo",
+        name="标志图标",
+        category="设计",
         summary="极简图形符号、无文字",
         prefix="标志设计，极简图形符号，矢量风格，单一主体，纯色背景，不含文字",
         suffix="专业品牌感",
@@ -271,7 +326,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("标志", "图标", "logo设计"),
     ),
     Style(
-        id="emoji", name="表情包", category="设计",
+        id="emoji",
+        name="表情包",
+        category="设计",
         summary="白底夸张表情，适合群聊",
         prefix="表情包风格，夸张生动的表情，简洁描边，白色背景，可爱搞笑",
         suffix="适合聊天传播",
@@ -280,7 +337,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("表情", "贴纸"),
     ),
     Style(
-        id="render3d", name="3D渲染", category="3D/潮玩",
+        id="render3d",
+        name="3D渲染",
+        category="3D/潮玩",
         summary="柔和环境光的 C4D 质感",
         prefix="3D 渲染风格，C4D 质感，柔和环境光，次表面散射，精致材质与倒角",
         suffix="干净的高级感",
@@ -289,7 +348,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("3d", "c4d", "三维渲染"),
     ),
     Style(
-        id="clay", name="黏土手办", category="3D/潮玩",
+        id="clay",
+        name="黏土手办",
+        category="3D/潮玩",
         summary="软陶黏土质感的潮玩",
         prefix="黏土手办风格，软陶黏土材质，微距摄影质感，可爱立体造型，柔和棚拍光",
         suffix="潮玩盲盒质感",
@@ -298,7 +359,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("黏土", "黏土风", "手办"),
     ),
     Style(
-        id="wallpaper", name="风景壁纸", category="场景",
+        id="wallpaper",
+        name="风景壁纸",
+        category="场景",
         summary="电影级宽幅风景",
         prefix="宏大风景壁纸，电影级构图，丰富的氛围光，超广角视野，高细节远景",
         suffix="适合做桌面壁纸",
@@ -307,7 +370,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("壁纸", "风景"),
     ),
     Style(
-        id="concept", name="概念设定", category="场景",
+        id="concept",
+        name="概念设定",
+        category="场景",
         summary="角色/场景设定集风格",
         prefix="概念设定图，角色与场景设计，精细的结构刻画，氛围光照，设定集排版感",
         suffix="专业原画水准",
@@ -316,7 +381,9 @@ BUILTIN_STYLES: tuple[Style, ...] = (
         aliases=("概念图", "设定图", "原画"),
     ),
     Style(
-        id="game", name="游戏场景", category="场景",
+        id="game",
+        name="游戏场景",
+        category="场景",
         summary="史诗感游戏场景原画",
         prefix="游戏场景原画，史诗感构图，体积光，丰富的环境细节，电影级氛围",
         suffix="3A 游戏美术风格",
@@ -364,7 +431,9 @@ AUTO_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
 
 _NAME_SUFFIXES = ("风格", "画风", "风")
 _SPACE_RE = re.compile(r"\s+")
-_PUNCT_RE = re.compile(r"^[\s,，、:：;；.。!！?？\"'“”‘’]+|[\s,，、:：;；.。!！?？\"'“”‘’]+$")
+_PUNCT_RE = re.compile(
+    r"^[\s,，、:：;；.。!！?？\"'“”‘’]+|[\s,，、:：;；.。!！?？\"'“”‘’]+$"
+)
 
 
 def normalize(text: str) -> str:
@@ -408,7 +477,9 @@ class StyleBook:
         return list(self.styles.keys())
 
     def get(self, style_id: str, default: str = "general") -> Style:
-        return self.styles.get(style_id) or self.styles.get(default) or BUILTIN_STYLES[0]
+        return (
+            self.styles.get(style_id) or self.styles.get(default) or BUILTIN_STYLES[0]
+        )
 
     def resolve(self, name: str) -> Style | None:
         """把用户输入解析成风格：先精确，再最长子串。"""
@@ -477,7 +548,8 @@ class StyleBook:
         if not isinstance(payload, dict):
             # 兼容“直接写 id → 定义”的简写
             payload = {
-                k: v for k, v in raw.items()
+                k: v
+                for k, v in raw.items()
                 if k not in ("styles", "override", "disable") and isinstance(v, dict)
             }
 
@@ -503,7 +575,9 @@ class StyleBook:
                 base = self.styles.get(style_id)
                 if not base or not isinstance(patch, dict):
                     continue
-                allowed = {k: v for k, v in patch.items() if k in Style.__dataclass_fields__}
+                allowed = {
+                    k: v for k, v in patch.items() if k in Style.__dataclass_fields__
+                }
                 try:
                     self.styles[style_id] = replace(base, **allowed)
                     self.load_notes.append(f"已覆盖风格：{style_id}")

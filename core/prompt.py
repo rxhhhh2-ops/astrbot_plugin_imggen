@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """提示词处理：清洗、截断、风格模板拼装、触发词剥离。"""
+
 from __future__ import annotations
 
 import re
@@ -44,8 +45,13 @@ def join_parts(parts) -> str:
     return _DUP_PUNCT_RE.sub("，", joined)
 
 
-def build_prompt(style: Style, user_prompt: str, *, include_style: bool = True,
-                 negative_as_hint: bool = True) -> tuple[str, str]:
+def build_prompt(
+    style: Style,
+    user_prompt: str,
+    *,
+    include_style: bool = True,
+    negative_as_hint: bool = True,
+) -> tuple[str, str]:
     """返回 (最终提示词, 负面提示词)。
 
     - include_style=False 时只用用户原文（例如用户明确说“不要加任何风格”）；
@@ -68,7 +74,7 @@ def strip_prefixes(text: str, prefixes) -> str:
         return ""
     for prefix in sorted({p for p in prefixes if p}, key=len, reverse=True):
         if out.startswith(prefix):
-            return out[len(prefix):].lstrip(_LEADING_PUNCT).strip()
+            return out[len(prefix) :].lstrip(_LEADING_PUNCT).strip()
     return out
 
 
@@ -84,11 +90,11 @@ def strip_command(text: str, names) -> str:
     # 先尝试首个空白分隔的词
     match = re.match(r"(\S+)(?:\s+|$)", out)
     if match and match.group(1).lower() in name_set:
-        return out[match.end():].strip()
+        return out[match.end() :].strip()
     # 再尝试连写形式（中文常见）
     for name in sorted(name_set, key=len, reverse=True):
         if lowered.startswith(name):
-            return out[len(name):].lstrip(_LEADING_PUNCT).strip()
+            return out[len(name) :].lstrip(_LEADING_PUNCT).strip()
     return out
 
 
