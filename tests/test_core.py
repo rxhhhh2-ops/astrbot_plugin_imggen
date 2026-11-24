@@ -9,6 +9,7 @@ import os
 import sys
 import tempfile
 import time
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -174,6 +175,16 @@ def test_store():
 
 async def _limits_case():
     print("== 限流 ==")
+    # Linux 容器刚启动时 monotonic 可能只有几十秒；首次请求不能被误判为冷却。
+    with mock.patch("core.limits.time.monotonic", return_value=5.0):
+        fresh = UsageLimiter(
+            cooldown_seconds=60, daily_limit=0, max_concurrency=1,
+            queue_timeout=0.2, max_queue=0,
+        )
+        await fresh.acquire("fresh")
+        fresh.release("fresh", success=False)
+    check(True, "低 uptime 下首次请求不被误判冷却")
+
     limiter = UsageLimiter(cooldown_seconds=60, daily_limit=0, max_concurrency=1,
                            queue_timeout=0.2, max_queue=0)
     await limiter.acquire("u1")

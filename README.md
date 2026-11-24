@@ -357,6 +357,11 @@ astrbot_plugin_imggen/
 
 ## 更新记录
 
+### v1.3.2
+
+- **修复 Linux 容器/新机器上首次请求被误判冷却**：`UsageLimiter` 原先用 `0.0` 作为“没有上次请求”的哨兵，而 `time.monotonic()` 在刚启动的容器里可能只有几十秒，导致 `60 - 30` 被算成“还在冷却”。现在改用 `None` 判断“从未请求”，Docker 部署下第一次 `/画` 不会再被拦；
+- 新增低 uptime 回归测试（模拟 `monotonic=5.0`）；离线测试增至 257 项（core 76 / providers 66 / harness 115）。
+
 ### v1.3.1
 
 - **修复关键词触发“没有任何回复、服务商零请求”**：群聊/私聊发送“画一张…”“帮我画…”“生图…”时，旧实现在生成开始前调用 `event.stop_event()`；AstrBot 调度器一旦看到事件已停止，会在第一个进度 `yield` 处丢弃事件链，生成器被挂起，后续 `_create_images()` 根本不会执行。现在改用 `event.should_call_llm(True)` 禁止默认 LLM 请求，不再阻断插件自己的结果发送；

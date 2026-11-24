@@ -68,7 +68,11 @@ class UsageLimiter:
     def _remaining_cooldown(self, user_key: str) -> float:
         if self.cooldown_seconds <= 0:
             return 0.0
-        last = self._last_start.get(user_key, 0.0)
+        last = self._last_start.get(user_key)
+        if last is None:
+            # 不能用 0.0 当哨兵：Linux 容器/新机器上 time.monotonic() 可能很小，
+            # 会把“从未请求过”误判成刚请求过，导致首次请求被冷却拦截。
+            return 0.0
         return max(0.0, self.cooldown_seconds - (time.monotonic() - last))
 
     # ---------- 持久化 ----------

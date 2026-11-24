@@ -2,6 +2,6 @@ name: astrbot_plugin_imggen
 display_name: 绘影生图
 desc: QQ 一句话生图插件。用户发送“画一张……”或 /画 即可出图，内置 30 种风格（二次元/国风水墨/写实摄影/像素/海报/信息图/3D/绘本等），支持 OpenAI 兼容接口、Gemini、阿里云百炼，多服务商自动降级、并发闸门、冷却配额、超时重试与磁盘自动清理。
 short_desc: 一句话生图 · 30 种风格 · 多服务商自动降级
-version: v1.3.1
+version: v1.3.2
 author: wanjie
 repo: https://github.com/rxhhhh2-ops/astrbot_plugin_imggen

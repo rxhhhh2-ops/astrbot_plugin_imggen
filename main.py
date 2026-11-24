@@ -108,7 +108,7 @@ except ImportError:  # 作为顶层模块加载（测试/独立运行）
     from core.styles import Style, StyleBook  # type: ignore
 
 PLUGIN_NAME = "astrbot_plugin_imggen"
-PLUGIN_VERSION = "1.3.1"
+PLUGIN_VERSION = "1.3.2"
 COMMAND_NAMES = ("画", "绘画", "画图", "生图", "draw", "imagine", "绘制")
 STYLE_COMMAND_NAMES = ("画风", "风格", "画风列表")
 STATUS_COMMAND_NAMES = ("画状态", "生图状态", "绘图状态")
