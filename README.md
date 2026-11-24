@@ -357,6 +357,11 @@ astrbot_plugin_imggen/
 
 ## 更新记录
 
+### v1.3.3
+
+- **日志合规修复（上架审核）**：`core/limits.py`、`core/providers/base.py`、`core/providers/openai_compat.py`、`core/styles.py` 统一改为 `from astrbot.api import logger`，移除 `import logging`、`logging.getLogger(...)` 及测试回退 logger；全仓库不再使用 Python 内置 `logging` 模块；
+- 离线测试维持 257 项（core 76 / providers 66 / harness 115），全部通过。
+
 ### v1.3.2
 
 - **修复 Linux 容器/新机器上首次请求被误判冷却**：`UsageLimiter` 原先用 `0.0` 作为“没有上次请求”的哨兵，而 `time.monotonic()` 在刚启动的容器里可能只有几十秒，导致 `60 - 30` 被算成“还在冷却”。现在改用 `None` 判断“从未请求”，Docker 部署下第一次 `/画` 不会再被拦；

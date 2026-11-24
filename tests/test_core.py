@@ -15,6 +15,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 
+import fake_boot  # noqa: F401,E402  # 提供 astrbot.api.logger
+
 from core.breaker import ProviderBreaker  # noqa: E402
 from core.config import ProviderProfile, RuntimeSettings  # noqa: E402
 from core.limits import LimitError, UsageLimiter  # noqa: E402

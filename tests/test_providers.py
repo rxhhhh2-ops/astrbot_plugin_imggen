@@ -13,6 +13,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 
+import fake_boot  # noqa: F401,E402  # 提供 astrbot.api.logger
+
 import aiohttp  # noqa: E402
 from aiohttp import web  # noqa: E402
 

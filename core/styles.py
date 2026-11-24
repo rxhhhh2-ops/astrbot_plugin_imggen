@@ -16,12 +16,7 @@ import re
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-try:  # 插件内相对导入；测试或独立运行时退回日志
-    from astrbot.api import logger
-except Exception:  # noqa: BLE001
-    import logging
-
-    logger = logging.getLogger(__name__)
+from astrbot.api import logger
 
 
 @dataclass(frozen=True)

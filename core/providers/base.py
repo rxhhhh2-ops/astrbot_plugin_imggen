@@ -6,19 +6,19 @@ import asyncio
 import base64
 import binascii
 import json
-import logging
 import random
 import re
 from dataclasses import dataclass, field
 
 import aiohttp
 
+from astrbot.api import logger
+
 from ..config import ProviderProfile
 from ..sizes import SizeSpec, resolve_size
 
 _SNIPPET_LIMIT = 240
 _MAX_BODY_BYTES = 32 * 1024 * 1024  # 单次响应最多读 32MB，防异常大包拖垮内存
-_log = logging.getLogger("astrbot.plugin.imggen")
 
 # 截断/破损响应里抢救完整条目的正则
 _B64_SALVAGE_RE = re.compile(r'"b64_json"\s*:\s*"([A-Za-z0-9+/=]{64,})"')
@@ -240,12 +240,12 @@ def load_json_tolerant(
 
         items = _salvage_items(cleaned)
         if items:
-            _log.warning("生图响应不完整，已抢救 %d 张完整图片", len(items))
+            logger.warning("生图响应不完整，已抢救 %d 张完整图片", len(items))
             return {"data": items}
 
         prefix_item = _salvage_prefix_image(cleaned)
         if prefix_item:
-            _log.warning("生图响应尾部被截断，但图片数据完整，已恢复 1 张")
+            logger.warning("生图响应尾部被截断，但图片数据完整，已恢复 1 张")
             return {"data": [prefix_item]}
 
         if truncated:

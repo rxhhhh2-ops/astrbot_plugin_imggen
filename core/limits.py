@@ -7,13 +7,12 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import os
 import time
 from datetime import date
 from pathlib import Path
 
-_log = logging.getLogger("astrbot.plugin.imggen")
+from astrbot.api import logger
 
 
 class LimitError(Exception):
@@ -85,7 +84,7 @@ class UsageLimiter:
         except FileNotFoundError:
             return
         except Exception as exc:  # noqa: BLE001
-            _log.warning(f"[imggen] 读取额度状态失败：{exc!r}")
+            logger.warning(f"[imggen] 读取额度状态失败：{exc!r}")
             return
         if not isinstance(data, dict):
             return
@@ -154,7 +153,7 @@ class UsageLimiter:
             )
             os.replace(tmp, self._state_path)
         except Exception as exc:  # noqa: BLE001
-            _log.warning(f"[imggen] 保存额度状态失败：{exc!r}")
+            logger.warning(f"[imggen] 保存额度状态失败：{exc!r}")
 
     # ---------- 对外 ----------
 

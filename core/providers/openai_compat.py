@@ -10,13 +10,11 @@
 """
 from __future__ import annotations
 
-import logging
-
 import aiohttp
 
-from .base import ImageProvider, ImageResult, ProviderError, ReferenceImage, request_json
+from astrbot.api import logger
 
-_log = logging.getLogger("astrbot.plugin.imggen")
+from .base import ImageProvider, ImageResult, ProviderError, ReferenceImage, request_json
 
 
 class OpenAICompatProvider(ImageProvider):
@@ -131,7 +129,7 @@ class OpenAICompatProvider(ImageProvider):
                     or (fmt == "url" and exc.status not in (400, 401, 403))
                 )
                 if has_next and retry_other:
-                    _log.warning(
+                    logger.warning(
                         "[imggen] openai 以 %s 格式请求失败（%s），改用 %s 重试",
                         fmt,
                         exc.message[:120],
@@ -260,7 +258,7 @@ class OpenAICompatProvider(ImageProvider):
                     or (fmt == "url" and exc.status not in (400, 401, 403))
                 )
                 if has_next and retry_other:
-                    _log.warning(
+                    logger.warning(
                         "[imggen] openai 图生图以 %s 格式请求失败（%s），改用 %s 重试",
                         fmt,
                         exc.message[:120],

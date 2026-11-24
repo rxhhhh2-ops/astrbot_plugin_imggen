@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """极简假 AstrBot：只实现插件用到的 API，用于离线测试。"""
-import logging
 
 
 class _Logger:
